@@ -1,0 +1,10 @@
+// Puedes reemplazar este logo por el de tu empresa
+// Este es un placeholder SVG simple
+export default function Logo() {
+  return (
+    <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="80" height="80" rx="20" fill="#2563eb"/>
+      <text x="50%" y="54%" textAnchor="middle" fill="#fff" fontSize="32" fontWeight="bold" dy=".3em">QR</text>
+    </svg>
+  );
+}

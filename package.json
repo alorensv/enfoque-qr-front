@@ -1,0 +1,20 @@
+{
+	"name": "enfoque-qr-front",
+	"version": "1.0.0",
+	"private": true,
+	"scripts": {
+		"dev": "next dev",
+		"build": "next build",
+		"start": "next start",
+		"lint": "next lint"
+	},
+	"dependencies": {
+		"next": "14.0.0",
+		"react": "19.2.1",
+		"react-dom": "19.2.1"
+	},
+	"devDependencies": {
+		"eslint": "8.56.0",
+		"eslint-config-next": "14.0.0"
+	}
+}
