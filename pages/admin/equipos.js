@@ -20,7 +20,16 @@ export default function EquiposPage() {
   const handleDelete = async (id) => {
     if (!window.confirm('¿Seguro que deseas eliminar este equipo?')) return;
     setDeletingId(id);
-    await fetch(`/api/equipos/${id}`, { method: 'DELETE' });
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/${id}`, { method: 'DELETE' });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.error || `Error ${response.status}: ${response.statusText}`);
+      }
+      // Puedes usar "data" si necesitas el resultado del backend
+    } catch (err) {
+      setError(err.message || 'Error al eliminar el equipos');
+    }
     setEquipos(equipos.filter(e => e.id !== id));
     setDeletingId(null);
   };
