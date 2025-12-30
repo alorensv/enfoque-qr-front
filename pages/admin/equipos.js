@@ -3,16 +3,35 @@ import { useState, useEffect } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import Link from 'next/link';
 
+
 export default function EquiposPage() {
   const [equipos, setEquipos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [qrMap, setQrMap] = useState({}); // { [equipoId]: [qrs] }
 
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments`)
       .then(res => res.json())
-      .then(data => setEquipos(data))
+      .then(async (data) => {
+        setEquipos(data);
+        // Para cada equipo, buscar sus QR
+        const qrResults = await Promise.all(
+          data.map(async (equipo) => {
+            try {
+              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/${equipo.id}/qrs`);
+              if (!res.ok) return [equipo.id, []];
+              const qrs = await res.json();
+              return [equipo.id, qrs];
+            } catch {
+              return [equipo.id, []];
+            }
+          })
+        );
+        const qrObj = Object.fromEntries(qrResults);
+        setQrMap(qrObj);
+      })
       .catch(() => setError('Error al cargar los equipos'))
       .finally(() => setLoading(false));
   }, []);
@@ -26,12 +45,17 @@ export default function EquiposPage() {
       if (!response.ok) {
         throw new Error(data?.error || `Error ${response.status}: ${response.statusText}`);
       }
-      // Puedes usar "data" si necesitas el resultado del backend
     } catch (err) {
       setError(err.message || 'Error al eliminar el equipos');
     }
     setEquipos(equipos.filter(e => e.id !== id));
     setDeletingId(null);
+    // Eliminar QR del mapa
+    setQrMap(prev => {
+      const copy = { ...prev };
+      delete copy[id];
+      return copy;
+    });
   };
 
   return (
@@ -77,6 +101,7 @@ export default function EquiposPage() {
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Nombre</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Serie</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Estado</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">QR</th>
                     <th className="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Acciones</th>
                   </tr>
                 </thead>
@@ -87,6 +112,30 @@ export default function EquiposPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-gray-600">{equipo.serialNumber || <span className="text-gray-300">-</span>}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 rounded-full text-xs font-bold ${equipo.status === 'activo' ? 'bg-green-100 text-green-700' : equipo.status === 'inactivo' ? 'bg-gray-200 text-gray-500' : 'bg-yellow-100 text-yellow-700'}`}>{equipo.status || 'Sin estado'}</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {Array.isArray(qrMap[equipo.id]) && qrMap[equipo.id].length > 0 ? (
+                          <div className="flex flex-col gap-1">
+                            {qrMap[equipo.id].map(qr => (
+                              <div key={qr.token} className="flex items-center gap-2">
+                                <a
+                                  href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/qr/${qr.token}/image`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center px-2 py-1 rounded-md text-green-700 bg-green-50 hover:bg-green-100 font-semibold text-xs transition-all focus:outline-none focus:ring-2 focus:ring-green-200"
+                                  title="Descargar QR"
+                                  download
+                                >
+                                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                                  Descargar QR
+                                </a>
+                                <span className="text-gray-400 text-xs">{qr.estado}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-gray-300 text-xs">Sin QR</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <div className="flex items-center justify-center gap-2">
