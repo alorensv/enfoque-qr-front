@@ -20,23 +20,20 @@ export default function QrPage() {
     if (!token) return;
     setLoading(true);
     setError(null);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/qr/${token}`)
-      .then(res => {
-        if (!res.ok) throw new Error('QR no encontrado');
-        return res.json();
-      })
-      .then(async data => {
-        setQr(data);
-        // Buscar equipo relacionado a este QR
-        // 1. Buscar en equipment_qr_codes por token
-        const eqRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/equipos/by-qr/${token}`);
-        if (eqRes.ok) {
-          const eqData = await eqRes.json();
-          setEquipo(eqData);
-          setEditData(eqData ? { ...eqData } : null);
-        } else {
-          setEquipo(null);
-        }
+    // Consultar QR y equipo en paralelo
+    Promise.all([
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/qr/${token}`)
+        .then(res => {
+          if (!res.ok) throw new Error('QR no encontrado');
+          return res.json();
+        }),
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/by-qr/${token}`)
+        .then(res => res.ok ? res.json() : null)
+    ])
+      .then(([qrData, equipoData]) => {
+        setQr(qrData);
+        setEquipo(equipoData);
+        setEditData(equipoData ? { ...equipoData } : null);
       })
       .catch(() => setError('QR no encontrado'))
       .finally(() => setLoading(false));
@@ -73,13 +70,17 @@ export default function QrPage() {
       <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-4 md:p-8 flex flex-col gap-4">
         {/* Header equipo */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 border-b pb-2">
-          <div>
+          <div className="flex-1">
             <h1 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center gap-2">
               {equipo?.name || 'Equipo'}
               {equipo?.status && (
                 <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold ${equipo.status === 'activo' ? 'bg-green-100 text-green-700' : equipo.status === 'inactivo' ? 'bg-gray-200 text-gray-500' : 'bg-yellow-100 text-yellow-700'}`}>{equipo.status}</span>
               )}
             </h1>
+            {equipo?.description && (
+              <div className="text-gray-600 text-sm mt-1 mb-1">{equipo.description}</div>
+            )}
+            <div className="text-xs text-gray-400 mb-1">Fecha de creación: <span className="font-mono bg-gray-100 px-1 rounded">{equipo?.createdAt ? new Date(equipo.createdAt).toLocaleDateString() : '-'}</span></div>
             <div className="text-xs text-gray-400">Token QR: <span className="font-mono bg-gray-100 px-1 rounded">{qr.token}</span></div>
           </div>
           {qr.imagenPath && (
