@@ -1,10 +1,12 @@
 import AdminLayout from '../../../components/AdminLayout';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
+import { useAuth } from '../../../contexts/AuthContext';
 
 export default function NuevoDocumento() {
   const router = useRouter();
   const { equipmentId } = router.query;
+  const { user } = useAuth();
   const [form, setForm] = useState({
     name: '',
     type: '',
@@ -32,14 +34,25 @@ export default function NuevoDocumento() {
       setSaving(false);
       return;
     }
-    // Aquí debes obtener el institutionId real, por ahora simulado:
-    const institutionId = 1;
+    // Obtener institutionId del usuario autenticado
+    const institutionId = user?.institutionId;
+    if (!institutionId) {
+      setMsg('No se pudo obtener la institución del usuario');
+      setSaving(false);
+      return;
+    }
     const data = new FormData();
     data.append('file', form.file);
     data.append('name', form.name);
     data.append('type', form.type);
     data.append('userId', String(form.userId));
     data.append('institutionId', String(institutionId));
+
+    console.log(JSON.stringify(data));
+    // Mostrar en consola todos los campos y valores del FormData
+    for (let pair of data.entries()) {
+      console.log(pair[0], pair[1]);
+    }
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/${equipmentId}/documents`, {
       method: 'POST',
       body: data
