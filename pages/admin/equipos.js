@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import Link from 'next/link';
@@ -10,27 +9,42 @@ export default function EquiposPage() {
   const [error, setError] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [qrMap, setQrMap] = useState({}); // { [equipoId]: [qrs] }
+  const [docMap, setDocMap] = useState({}); // { [equipoId]: cantidad }
 
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments`)
       .then(res => res.json())
       .then(async (data) => {
         setEquipos(data);
-        // Para cada equipo, buscar sus QR
-        const qrResults = await Promise.all(
-          data.map(async (equipo) => {
-            try {
-              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/${equipo.id}/qrs`);
-              if (!res.ok) return [equipo.id, []];
-              const qrs = await res.json();
-              return [equipo.id, qrs];
-            } catch {
-              return [equipo.id, []];
-            }
-          })
-        );
-        const qrObj = Object.fromEntries(qrResults);
-        setQrMap(qrObj);
+        // Para cada equipo, buscar sus QR y documentos
+        const [qrResults, docResults] = await Promise.all([
+          Promise.all(
+            data.map(async (equipo) => {
+              try {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/${equipo.id}/qrs`);
+                if (!res.ok) return [equipo.id, []];
+                const qrs = await res.json();
+                return [equipo.id, qrs];
+              } catch {
+                return [equipo.id, []];
+              }
+            })
+          ),
+          Promise.all(
+            data.map(async (equipo) => {
+              try {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/${equipo.id}/documents`);
+                if (!res.ok) return [equipo.id, 0];
+                const docs = await res.json();
+                return [equipo.id, Array.isArray(docs) ? docs.length : 0];
+              } catch {
+                return [equipo.id, 0];
+              }
+            })
+          )
+        ]);
+        setQrMap(Object.fromEntries(qrResults));
+        setDocMap(Object.fromEntries(docResults));
       })
       .catch(() => setError('Error al cargar los equipos'))
       .finally(() => setLoading(false));
@@ -130,6 +144,13 @@ export default function EquiposPage() {
                                   Descargar QR
                                 </a>
                                 <span className="text-gray-400 text-xs">{qr.estado}</span>
+                                {/* Link a detalle QR y contador de docs */}
+                                <Link href={`/qr/${qr.token}`} title="Ver detalle y documentos">
+                                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 text-xs font-bold">
+                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 12H9m6 0a6 6 0 11-12 0 6 6 0 0112 0z" /></svg>
+                                    {docMap[equipo.id] || 0} Docs
+                                  </span>
+                                </Link>
                               </div>
                             ))}
                           </div>
@@ -139,6 +160,15 @@ export default function EquiposPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <div className="flex items-center justify-center gap-2">
+                          {/* Icono para agregar documentación */}
+                          <Link
+                            href={{ pathname: '/admin/docs/nuevo', query: { equipmentId: equipo.id } }}
+                            className="inline-flex items-center px-2 py-1 rounded-md text-indigo-600 hover:bg-indigo-50 font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-indigo-200 text-xs"
+                            title="Agregar documentación"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                            Doc
+                          </Link>
                           <Link href={`/admin/equipos/${equipo.id}/editar`} className="inline-flex items-center px-2 py-1 rounded-md text-blue-600 hover:bg-blue-50 font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-blue-200 text-[16px]" title="Editar">
                             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13h3l8-8a2.828 2.828 0 10-4-4l-8 8v3z" /></svg>
                             Editar

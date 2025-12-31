@@ -7,6 +7,7 @@ export default function QrPage() {
   const { token } = router.query;
   const [qr, setQr] = useState(null);
   const [equipo, setEquipo] = useState(null);
+  const [documentos, setDocumentos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [clave, setClave] = useState('');
@@ -20,7 +21,8 @@ export default function QrPage() {
     if (!token) return;
     setLoading(true);
     setError(null);
-    // Consultar QR y equipo en paralelo
+    // Consultar QR, equipo y documentos en paralelo
+    let equipoId = null;
     Promise.all([
       fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/qr/${token}`)
         .then(res => {
@@ -30,10 +32,23 @@ export default function QrPage() {
       fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/by-qr/${token}`)
         .then(res => res.ok ? res.json() : null)
     ])
-      .then(([qrData, equipoData]) => {
+      .then(async ([qrData, equipoData]) => {
         setQr(qrData);
         setEquipo(equipoData);
         setEditData(equipoData ? { ...equipoData } : null);
+        if (equipoData && equipoData.id) {
+          equipoId = equipoData.id;
+          // Obtener documentos reales
+          const docsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/${equipoId}/documents`);
+          if (docsRes.ok) {
+            const docs = await docsRes.json();
+            setDocumentos(docs);
+          } else {
+            setDocumentos([]);
+          }
+        } else {
+          setDocumentos([]);
+        }
       })
       .catch(() => setError('QR no encontrado'))
       .finally(() => setLoading(false));
@@ -102,16 +117,30 @@ export default function QrPage() {
         {/* Documentación */}
         <div>
           <h2 className="text-base font-bold text-gray-800 mb-1">Documentación</h2>
-          {/* Simulación de documentos */}
           <ul className="space-y-1">
-            <li className="flex items-center justify-between bg-gray-50 rounded px-2 py-1 text-sm">
-              <span>Manual.pdf</span>
-              <button className="text-blue-600 hover:underline text-xs">Descargar</button>
-            </li>
-            <li className="flex items-center justify-between bg-gray-50 rounded px-2 py-1 text-sm">
-              <span>Certificado.pdf</span>
-              <button className="text-blue-600 hover:underline text-xs">Descargar</button>
-            </li>
+            {documentos.length === 0 && (
+              <li className="text-gray-400 text-sm">No hay documentos asociados.</li>
+            )}
+            {documentos.map(doc => (
+              <li key={doc.id} className="bg-gray-50 rounded px-2 py-1 text-sm flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                <div className="flex-1 flex flex-col">
+                  <span className="font-semibold text-gray-800">{doc.name}</span>
+                  <span className="text-xs text-gray-500">{doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : '-'}{doc.responsable ? ` · ${doc.responsable}` : ''}</span>
+                </div>
+                <div>
+                  {doc.filePath ? (
+                    <a
+                      href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/documents/${doc.id}/download`}
+                      className="text-blue-600 hover:underline text-xs"
+                    >
+                      Descargar
+                    </a>
+                  ) : (
+                    <span className="text-gray-400 text-xs">Sin archivo</span>
+                  )}
+                </div>
+              </li>
+            ))}
           </ul>
         </div>
 
