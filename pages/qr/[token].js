@@ -12,6 +12,7 @@ export default function QrPage() {
   const [error, setError] = useState(null);
   const [clave, setClave] = useState('');
   const [claveOk, setClaveOk] = useState(false);
+  const [puedeVerPrivados, setPuedeVerPrivados] = useState(false);
   const [editData, setEditData] = useState(null);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState(null);
@@ -59,11 +60,33 @@ export default function QrPage() {
     setClaveOk(false);
     setSaveMsg(null);
     // Aquí deberías validar la clave contra el backend
-    if (clave === '1234') {
+    if (clave === 'codigo2026') {
       setClaveOk(true);
+      setPuedeVerPrivados(true);
     } else {
       setSaveMsg('Clave incorrecta');
     }
+  };
+
+  // Marcar documento como inactivo (soft delete)
+  const marcarDocumentoInactivo = async (docId) => {
+    if (!window.confirm('¿Seguro que deseas marcar este documento como inactivo?')) return;
+    setSaving(true);
+    setSaveMsg(null);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/documents/${docId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setDocumentos(prev => prev.filter(d => d.id !== docId));
+        setSaveMsg('Documento marcado como inactivo');
+      } else {
+        setSaveMsg('Error al marcar documento');
+      }
+    } catch {
+      setSaveMsg('Error al marcar documento');
+    }
+    setSaving(false);
   };
 
   // Simulación de guardar cambios (reemplazar por API real)
@@ -118,29 +141,68 @@ export default function QrPage() {
         <div>
           <h2 className="text-base font-bold text-gray-800 mb-1">Documentación</h2>
           <ul className="space-y-1">
-            {documentos.length === 0 && (
+            {!puedeVerPrivados && documentos.filter(doc => !doc.isPrivate).length === 0 && (
               <li className="text-gray-400 text-sm">No hay documentos asociados.</li>
             )}
-            {documentos.map(doc => (
-              <li key={doc.id} className="bg-gray-50 rounded px-2 py-1 text-sm flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                <div className="flex-1 flex flex-col">
-                  <span className="font-semibold text-gray-800">{doc.name}</span>
-                  <span className="text-xs text-gray-500">{doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : '-'}{doc.responsable ? ` · ${doc.responsable}` : ''}</span>
-                </div>
-                <div>
-                  {doc.filePath ? (
-                    <a
-                      href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/documents/${doc.id}/download`}
-                      className="text-blue-600 hover:underline text-xs"
-                    >
-                      Descargar
-                    </a>
-                  ) : (
-                    <span className="text-gray-400 text-xs">Sin archivo</span>
-                  )}
-                </div>
-              </li>
-            ))}
+            {puedeVerPrivados && documentos.length === 0 && (
+              <li className="text-gray-400 text-sm">No hay documentos asociados.</li>
+            )}
+            {puedeVerPrivados
+              ? documentos
+                  .map(doc => (
+                    <li key={doc.id} className="bg-gray-50 rounded px-2 py-1 text-sm flex flex-col md:flex-row md:items-center md:justify-between gap-2 relative">
+                      <div className="flex-1 flex flex-col">
+                        <span className="font-semibold text-gray-800">{doc.name}{doc.isPrivate ? <span className="ml-2 text-xs text-red-500 font-bold">Privado</span> : null}</span>
+                        <span className="text-xs text-gray-500">{doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : '-'}{doc.responsable ? ` · ${doc.responsable}` : ''}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {doc.filePath ? (
+                          <a
+                            href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/documents/${doc.id}/download`}
+                            className="text-blue-600 hover:underline text-xs"
+                          >
+                            Descargar
+                          </a>
+                        ) : (
+                          <span className="text-gray-400 text-xs">Sin archivo</span>
+                        )}
+                        {puedeVerPrivados && (
+                          <button
+                            title="Marcar como inactivo"
+                            className="ml-2 text-red-500 hover:text-red-700 text-lg font-bold px-1"
+                            onClick={() => marcarDocumentoInactivo(doc.id)}
+                            disabled={saving}
+                            aria-label="Marcar como inactivo"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    </li>
+                  ))
+              : documentos
+                  .filter(doc => !doc.isPrivate)
+                  .map(doc => (
+                    <li key={doc.id} className="bg-gray-50 rounded px-2 py-1 text-sm flex flex-col md:flex-row md:items-center md:justify-between gap-2 relative">
+                      <div className="flex-1 flex flex-col">
+                        <span className="font-semibold text-gray-800">{doc.name}</span>
+                        <span className="text-xs text-gray-500">{doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : '-'}{doc.responsable ? ` · ${doc.responsable}` : ''}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {doc.filePath ? (
+                          <a
+                            href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/documents/${doc.id}/download`}
+                            className="text-blue-600 hover:underline text-xs"
+                          >
+                            Descargar
+                          </a>
+                        ) : (
+                          <span className="text-gray-400 text-xs">Sin archivo</span>
+                        )}
+                      </div>
+                    </li>
+                  ))
+            }
           </ul>
         </div>
 
@@ -183,52 +245,7 @@ export default function QrPage() {
           {saveMsg && <div className={`text-xs ${claveOk ? 'text-green-600' : 'text-red-500'}`}>{saveMsg}</div>}
         </div>
 
-        {/* Formulario de edición si clave válida */}
-        {claveOk && editData && (
-          <form
-            className="bg-blue-50 rounded-xl p-4 flex flex-col gap-2 mt-2"
-            onSubmit={e => {
-              e.preventDefault();
-              guardarCambios();
-            }}
-          >
-            <h3 className="font-bold text-blue-900 mb-2">Editar información del equipo</h3>
-            <label className="text-sm font-semibold">Nombre:
-              <input
-                className="border rounded px-2 py-1 text-sm w-full mt-1"
-                value={editData.name || ''}
-                onChange={e => setEditData({ ...editData, name: e.target.value })}
-              />
-            </label>
-            <label className="text-sm font-semibold">Serie:
-              <input
-                className="border rounded px-2 py-1 text-sm w-full mt-1"
-                value={editData.serialNumber || ''}
-                onChange={e => setEditData({ ...editData, serialNumber: e.target.value })}
-              />
-            </label>
-            {/* Agrega más campos editables según sea necesario */}
-            <div className="flex gap-2 mt-2">
-              <button
-                type="submit"
-                className="bg-green-600 text-white px-4 py-1 rounded font-semibold text-sm hover:bg-green-700 disabled:opacity-50"
-                disabled={saving}
-              >
-                Guardar
-              </button>
-              <button
-                type="button"
-                className="bg-gray-300 text-gray-700 px-4 py-1 rounded font-semibold text-sm hover:bg-gray-400"
-                onClick={() => setClaveOk(false)}
-                disabled={saving}
-              >
-                Cancelar
-              </button>
-            </div>
-            {saving && <div className="text-xs text-blue-600">Guardando...</div>}
-            {saveMsg && <div className="text-xs text-green-600">{saveMsg}</div>}
-          </form>
-        )}
+        {/* ...eliminado formulario de edición por clave 1234... */}
 
         {/* Descargar imagen QR */}
         <a

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useAuth } from '../../../contexts/AuthContext';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import AdminLayout from '../../../components/AdminLayout';
@@ -10,6 +11,7 @@ export default function NuevoEquipo() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const router = useRouter();
+  const { user } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,12 +20,17 @@ export default function NuevoEquipo() {
       setError('Por favor completa los campos obligatorios.');
       return;
     }
+    const institutionId = user?.institutionId;
+    if (!institutionId) {
+      setError('No se pudo obtener la institución del usuario');
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, serialNumber, status })
+        body: JSON.stringify({ name, serialNumber, status, institutionId })
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));

@@ -12,14 +12,17 @@ export default function NuevoDocumento() {
     type: '',
     file: null,
     userId: 1, // Simulado, deberías obtener el usuario real
+    isPrivate: false,
   });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
 
   const handleChange = e => {
-    const { name, value, files } = e.target;
+    const { name, value, files, type, checked } = e.target;
     if (name === 'file') {
       setForm(f => ({ ...f, file: files[0] }));
+    } else if (type === 'checkbox') {
+      setForm(f => ({ ...f, [name]: checked }));
     } else {
       setForm(f => ({ ...f, [name]: value }));
     }
@@ -42,11 +45,13 @@ export default function NuevoDocumento() {
       return;
     }
     const data = new FormData();
+
     data.append('file', form.file);
     data.append('name', form.name);
     data.append('type', form.type);
     data.append('userId', String(form.userId));
     data.append('institutionId', String(institutionId));
+    data.append('isPrivate', form.isPrivate ? 1 : 0);
 
     console.log(JSON.stringify(data));
     // Mostrar en consola todos los campos y valores del FormData
@@ -85,6 +90,17 @@ export default function NuevoDocumento() {
               required
               placeholder="Ej: Manual, Certificado, etc."
             />
+          </div>
+          <div className="flex items-center mb-2">
+            <input
+              type="checkbox"
+              name="isPrivate"
+              id="isPrivate"
+              checked={form.isPrivate}
+              onChange={handleChange}
+              className="mr-2"
+            />
+            <label htmlFor="isPrivate" className="text-sm text-gray-700">Documento privado (solo usuarios autorizados podrán verlo)</label>
           </div>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">Tipo</label>
