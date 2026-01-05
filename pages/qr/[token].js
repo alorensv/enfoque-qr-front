@@ -16,13 +16,13 @@ export default function QrPage() {
   const [editData, setEditData] = useState(null);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState(null);
+  const [mantenciones, setMantenciones] = useState([]);
 
   // Cargar QR y datos de equipo relacionados
   useEffect(() => {
     if (!token) return;
     setLoading(true);
     setError(null);
-    // Consultar QR, equipo y documentos en paralelo
     let equipoId = null;
     Promise.all([
       fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/qr/${token}`)
@@ -47,8 +47,17 @@ export default function QrPage() {
           } else {
             setDocumentos([]);
           }
+          // Obtener mantenciones reales
+          const mantRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/maintenances/equipment/${equipoId}`);
+          if (mantRes.ok) {
+            const mants = await mantRes.json();
+            setMantenciones(mants);
+          } else {
+            setMantenciones([]);
+          }
         } else {
           setDocumentos([]);
+          setMantenciones([]);
         }
       })
       .catch(() => setError('QR no encontrado'))
@@ -208,17 +217,40 @@ export default function QrPage() {
 
         {/* Mantenciones */}
         <div>
-          <h2 className="text-base font-bold text-gray-800 mb-1">Mantenciones</h2>
-          {/* Simulación de mantenciones */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-1">
+            <h2 className="text-base font-bold text-gray-800">Mantenciones</h2>
+            {puedeVerPrivados && (
+              <button
+                className="w-full md:w-auto mt-2 md:mt-0 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-4 py-2 shadow transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-50 text-sm flex items-center justify-center gap-2"
+                style={{ minWidth: 180 }}
+                onClick={() => router.push(`/qr/${token}/maintenances/nuevo`)}
+              >
+                <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                Agregar mantención
+              </button>
+            )}
+          </div>
           <ul className="space-y-1">
-            <li className="flex items-center justify-between bg-gray-50 rounded px-2 py-1 text-sm">
-              <span>12/25 - OK - Juan P.</span>
-              <button className="text-blue-600 hover:underline text-xs">Ver</button>
-            </li>
-            <li className="flex items-center justify-between bg-gray-50 rounded px-2 py-1 text-sm">
-              <span>10/25 - Pendiente - Ana M.</span>
-              <button className="text-blue-600 hover:underline text-xs">Ver</button>
-            </li>
+            {mantenciones.length === 0 && (
+              <li className="text-gray-400 text-sm">No hay mantenciones registradas.</li>
+            )}
+            {mantenciones.map(mant => (
+              <li key={mant.id} className="flex items-center justify-between bg-gray-50 rounded px-2 py-1 text-sm">
+                <span>
+                  {mant.performedAt ? new Date(mant.performedAt).toLocaleDateString() : '-'}
+                  {' - '}
+                  {mant.status || '-'}
+                  {' - '}
+                  {mant.user?.userProfile?.fullName || mant.technician || 'Sin responsable'}
+                </span>
+                <button
+                  className="text-blue-600 hover:underline text-xs"
+                  onClick={() => router.push(`/qr/${token}/maintenances/${mant.id}`)}
+                >
+                  Ver
+                </button>
+              </li>
+            ))}
           </ul>
         </div>
 
