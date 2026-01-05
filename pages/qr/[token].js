@@ -1,6 +1,7 @@
 
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import Cookies from 'js-cookie';
 
 export default function QrPage() {
   const router = useRouter();
@@ -10,13 +11,29 @@ export default function QrPage() {
   const [documentos, setDocumentos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [clave, setClave] = useState('');
-  const [claveOk, setClaveOk] = useState(false);
+  // Auth state
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loginError, setLoginError] = useState(null);
   const [puedeVerPrivados, setPuedeVerPrivados] = useState(false);
   const [editData, setEditData] = useState(null);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState(null);
   const [mantenciones, setMantenciones] = useState([]);
+
+  // Check login status on mount
+  useEffect(() => {
+    const session = Cookies.get('institucion_session');
+    if (session) {
+      setIsLoggedIn(true);
+      setPuedeVerPrivados(true);
+    } else {
+      setIsLoggedIn(false);
+      setPuedeVerPrivados(false);
+    }
+  }, []);
+
+  // Controlar si mostrar el login embebido
+  const [showLogin, setShowLogin] = useState(false);
 
   // Cargar QR y datos de equipo relacionados
   useEffect(() => {
@@ -64,17 +81,13 @@ export default function QrPage() {
       .finally(() => setLoading(false));
   }, [token]);
 
-  // Simulación de validación de clave (reemplazar por API real)
-  const validarClave = async () => {
-    setClaveOk(false);
-    setSaveMsg(null);
-    // Aquí deberías validar la clave contra el backend
-    if (clave === 'codigo2026') {
-      setClaveOk(true);
-      setPuedeVerPrivados(true);
-    } else {
-      setSaveMsg('Clave incorrecta');
-    }
+
+  // Logout function
+  const handleLogout = () => {
+    Cookies.remove('institucion_session');
+    setIsLoggedIn(false);
+    setPuedeVerPrivados(false);
+    router.replace(`/qr/${token}`);
   };
 
   // Marcar documento como inactivo (soft delete)
@@ -107,6 +120,7 @@ export default function QrPage() {
       setSaveMsg('Cambios guardados correctamente');
     }, 1200);
   };
+
 
   if (loading) return <div className="p-8 text-center text-gray-500">Cargando información...</div>;
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
@@ -254,28 +268,26 @@ export default function QrPage() {
           </ul>
         </div>
 
-        {/* Sección de código (clave) */}
-        <div className="bg-gray-50 rounded-xl p-3 flex flex-col gap-2">
-          <label className="font-semibold text-sm text-gray-700">Código de acceso:</label>
-          <div className="flex gap-2">
-            <input
-              type="password"
-              className="border rounded px-2 py-1 text-sm flex-1"
-              value={clave}
-              onChange={e => setClave(e.target.value)}
-              placeholder="Ingrese clave"
-              disabled={claveOk}
-            />
-            <button
-              className="bg-blue-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
-              onClick={validarClave}
-              disabled={claveOk}
-            >
-              Validar
-            </button>
-          </div>
-          {saveMsg && <div className={`text-xs ${claveOk ? 'text-green-600' : 'text-red-500'}`}>{saveMsg}</div>}
-        </div>
+
+        {/* Botón para iniciar sesión o cerrar sesión */}
+        {!isLoggedIn && (
+          <button
+            className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold text-sm mt-2"
+            onClick={() => router.push(`/qr/login?token=${token}`)}
+          >
+            Iniciar sesión
+          </button>
+        )}
+        {isLoggedIn && (
+          <button
+            className="inline-flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-semibold text-sm mt-2"
+            onClick={handleLogout}
+          >
+            Cerrar sesión
+          </button>
+        )}
+
+        {/* Login embebido eliminado, ahora es redirección */}
 
         {/* ...eliminado formulario de edición por clave 1234... */}
 
