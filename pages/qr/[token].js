@@ -1,4 +1,3 @@
-
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
@@ -144,8 +143,8 @@ export default function QrPage() {
             <div className="text-xs text-gray-400 mb-1">Fecha de creación: <span className="font-mono bg-gray-100 px-1 rounded">{equipo?.createdAt ? new Date(equipo.createdAt).toLocaleDateString() : '-'}</span></div>
             <div className="text-xs text-gray-400">Token QR: <span className="font-mono bg-gray-100 px-1 rounded">{qr.token}</span></div>
           </div>
-          {qr.imagenPath && (
-            <img src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${qr.imagenPath}`} alt="QR" className="w-20 h-20 border rounded self-end md:self-center" />
+          {equipo?.equipmentPhoto && (
+            <img src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/public${equipo.equipmentPhoto}`} alt="Foto del equipo" className="w-20 h-20 object-cover border rounded self-end md:self-center" />
           )}
         </div>
 
@@ -251,6 +250,7 @@ export default function QrPage() {
             {mantenciones.map(mant => (
               <li key={mant.id} className="flex items-center justify-between bg-gray-50 rounded px-2 py-1 text-sm">
                 <span>
+                  <span className="font-mono text-xs bg-gray-200 rounded px-1 mr-2">ID: {mant.id}</span>
                   {mant.performedAt ? new Date(mant.performedAt).toLocaleDateString() : '-'}
                   {' - '}
                   {mant.status || '-'}
@@ -259,7 +259,7 @@ export default function QrPage() {
                 </span>
                 <button
                   className="text-blue-600 hover:underline text-xs"
-                  onClick={() => router.push(`/qr/${token}/maintenances/${mant.id}`)}
+                  onClick={() => router.push(`/qr/${token}/maintenances/detail?id=${mant.id}`)}
                 >
                   Ver
                 </button>

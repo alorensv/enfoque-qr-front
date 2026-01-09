@@ -8,6 +8,7 @@ export default function NuevoEquipo() {
   const [name, setName] = useState('');
   const [serialNumber, setSerialNumber] = useState('');
   const [status, setStatus] = useState('');
+  const [equipmentPhoto, setEquipmentPhoto] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const router = useRouter();
@@ -27,10 +28,17 @@ export default function NuevoEquipo() {
     }
     setSubmitting(true);
     try {
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('serialNumber', serialNumber);
+      formData.append('status', status);
+      formData.append('institutionId', institutionId);
+      if (equipmentPhoto) {
+        formData.append('equipmentPhoto', equipmentPhoto);
+      }
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, serialNumber, status, institutionId })
+        body: formData
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -96,6 +104,17 @@ export default function NuevoEquipo() {
               <option value="inactivo">Inactivo</option>
               <option value="mantenimiento">Mantenimiento</option>
             </select>
+          </div>
+          <div>
+            <label htmlFor="equipmentPhoto" className="block text-sm font-semibold text-gray-700 mb-1">Foto del equipo</label>
+            <input
+              id="equipmentPhoto"
+              type="file"
+              accept="image/*"
+              className="w-full px-4 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-200 focus:outline-none border-gray-200 transition"
+              onChange={e => setEquipmentPhoto(e.target.files[0])}
+              disabled={submitting}
+            />
           </div>
           {error && (
             <div className="text-red-500 text-sm text-center flex items-center justify-center gap-2">
