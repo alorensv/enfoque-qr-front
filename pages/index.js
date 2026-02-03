@@ -21,7 +21,8 @@ export default function Home() {
     const email = form.email.value;
     const password = form.password.value;
     try {
-      const res = await fetch('http://localhost:3001/auth/login', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const res = await fetch(`${apiUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
