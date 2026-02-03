@@ -13,7 +13,7 @@ export default function EquiposPage() {
   const [activeDropdown, setActiveDropdown] = useState(null);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/equipments`)
       .then(res => res.json())
       .then(async (data) => {
         setEquipos(data);
@@ -22,7 +22,7 @@ export default function EquiposPage() {
           Promise.all(
             data.map(async (equipo) => {
               try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/${equipo.id}/qrs`);
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/equipments/${equipo.id}/qrs`);
                 if (!res.ok) return [equipo.id, []];
                 const qrs = await res.json();
                 return [equipo.id, qrs];
@@ -34,7 +34,7 @@ export default function EquiposPage() {
           Promise.all(
             data.map(async (equipo) => {
               try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/${equipo.id}/documents`);
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/equipments/${equipo.id}/documents`);
                 if (!res.ok) return [equipo.id, 0];
                 const docs = await res.json();
                 return [equipo.id, Array.isArray(docs) ? docs.length : 0];
@@ -55,7 +55,7 @@ export default function EquiposPage() {
     if (!window.confirm('¿Seguro que deseas eliminar este equipo?')) return;
     setDeletingId(id);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/${id}`, { method: 'DELETE' });
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/equipments/${id}`, { method: 'DELETE' });
       const data = await response.json().catch(() => null);
       if (!response.ok) {
         throw new Error(data?.error || `Error ${response.status}: ${response.statusText}`);
@@ -218,7 +218,7 @@ function EquipmentActionsDropdown({ equipo, deletingId, handleDelete, qrs, isOpe
             {qrs.map(qr => (
               <a
                 key={qr.token}
-                href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/qr/${qr.token}/image`}
+                href={`${process.env.NEXT_PUBLIC_API_URL}/qr/${qr.token}/image`}
                 download
                 className="flex items-center gap-2 px-4 py-2 text-sm text-green-700 hover:bg-green-50 font-semibold w-full"
                 title="Descargar QR"
