@@ -42,12 +42,16 @@ export default function QrPage() {
     setError(null);
     let equipoId = null;
     Promise.all([
-      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/qr/${token}`)
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/qr/${token}`, {
+        credentials: 'include',
+      })
         .then(res => {
           if (!res.ok) throw new Error('QR no encontrado');
           return res.json();
         }),
-      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/by-qr/${token}`)
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/by-qr/${token}`, {
+        credentials: 'include',
+      })
         .then(res => res.ok ? res.json() : null)
     ])
       .then(async ([qrData, equipoData]) => {
@@ -57,7 +61,9 @@ export default function QrPage() {
         if (equipoData && equipoData.id) {
           equipoId = equipoData.id;
           // Obtener documentos reales
-          const docsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/${equipoId}/documents`);
+          const docsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/${equipoId}/documents`, {
+            credentials: 'include',
+          });
           if (docsRes.ok) {
             const docs = await docsRes.json();
             setDocumentos(docs);
@@ -65,7 +71,9 @@ export default function QrPage() {
             setDocumentos([]);
           }
           // Obtener mantenciones reales
-          const mantRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/maintenances/equipment/${equipoId}`);
+          const mantRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/maintenances/equipment/${equipoId}`, {
+            credentials: 'include',
+          });
           if (mantRes.ok) {
             const mants = await mantRes.json();
             setMantenciones(mants);
@@ -102,6 +110,7 @@ export default function QrPage() {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/documents/${docId}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
       if (res.ok) {
         setDocumentos(prev => prev.filter(d => d.id !== docId));

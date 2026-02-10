@@ -9,50 +9,41 @@ export function AuthProvider({ children }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Check for token and user info in localStorage on mount
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const institutionId = typeof window !== 'undefined' ? localStorage.getItem('institutionId') : null;
-    const role = typeof window !== 'undefined' ? localStorage.getItem('role') : null;
-    const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
-    if (token && institutionId && role && userId) {
-      setUser({ token, institutionId, role, userId });
-    }
-    setLoading(false);
+    // Verificar autenticación consultando /auth/me
+    const checkAuth = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+          credentials: 'include',
+        });
+        if (res.ok) {
+          const userData = await res.json();
+          setUser(userData);
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkAuth();
   }, []);
 
-  const login = (token) => {
-    // Decodificar el JWT para extraer institutionId, role y userId (sub)
-    let institutionId = null;
-    let role = null;
-    let userId = null; 
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      institutionId = payload.institutionId;
-      role = payload.role;
-      userId = payload.userId || payload.sub || payload.id;
-    } catch (e) {}
-    if (!institutionId || !role || !userId) {
-      // No permitir login si faltan datos
-      console.log('Invalid token payload');
-      setUser(null);
-      localStorage.removeItem('token');
-      localStorage.removeItem('institutionId');
-      localStorage.removeItem('role');
-      localStorage.removeItem('userId');
-      return;
-    }
-    localStorage.setItem('token', token);
-    localStorage.setItem('institutionId', institutionId);
-    localStorage.setItem('role', role);
-    localStorage.setItem('userId', userId);
-    setUser({ token, institutionId, role, userId });
+  const login = async (userData) => {
+    // El token ya está en la cookie httpOnly
+    setUser(userData);
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('institutionId');
-    localStorage.removeItem('role');
-    localStorage.removeItem('userId');
+  const logout = async () => {
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Error al hacer logout:', error);
+    }
     setUser(null);
     router.push('/');
   };

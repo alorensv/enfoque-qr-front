@@ -27,7 +27,9 @@ console.log('User in NuevaMantencion:', user);
     if (!token) return;
     setValidando(true);
     setError(null);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/by-qr/${token}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/by-qr/${token}`, {
+      credentials: 'include',
+    })
       .then(res => res.ok ? res.json() : null)
       .then(data => {
         if (!data || !data.id) {
@@ -57,6 +59,7 @@ console.log('User in NuevaMantencion:', user);
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/maintenances/equipment/${equipo.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ ...form, userId: user?.userId}),
       });
       if (!res.ok) throw new Error('Error al registrar mantención');
@@ -70,6 +73,7 @@ console.log('User in NuevaMantencion:', user);
         }
         await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/maintenances/${mant.id}/photos`, {
           method: 'POST',
+          credentials: 'include',
           body: fd,
         });
       }
@@ -82,6 +86,7 @@ console.log('User in NuevaMantencion:', user);
         }
         await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/maintenances/${mant.id}/documents`, {
           method: 'POST',
+          credentials: 'include',
           body: fd,
         });
       }

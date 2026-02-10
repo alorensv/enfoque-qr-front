@@ -25,13 +25,13 @@ export default function Home() {
       const res = await fetch(`${apiUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email, password })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Error de autenticación');
-      login(data.access_token);
+      login(data.user);
       setSuccess('¡Inicio de sesión exitoso!');
-      console.log("Logged in with token:");
       router.push('/admin/home');
     } catch (err) {
       setError(err.message);

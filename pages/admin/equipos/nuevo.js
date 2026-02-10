@@ -38,6 +38,7 @@ export default function NuevoEquipo() {
       }
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments`, {
         method: 'POST',
+        credentials: 'include',
         body: formData
       });
       if (!res.ok) {

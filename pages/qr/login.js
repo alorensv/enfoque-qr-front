@@ -18,11 +18,12 @@ export default function QrLogin() {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email: username, password })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Usuario o clave incorrectos');
-      // Aquí podrías validar el rol/institución si es necesario
+      // Token ya está en cookie httpOnly
       Cookies.set('institucion_session', 'ok', { expires: 1 });
       router.replace(`/qr/${token}`);
     } catch (err) {

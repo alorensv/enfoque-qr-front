@@ -60,6 +60,7 @@ export default function NuevoDocumento() {
     }
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/${equipmentId}/documents`, {
       method: 'POST',
+      credentials: 'include',
       body: data
     });
     if (res.ok) {

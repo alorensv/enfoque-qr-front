@@ -14,7 +14,9 @@ export default function EquiposPage() {
   const [activeDropdown, setActiveDropdown] = useState(null);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/equipments`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/equipments`, {
+      credentials: 'include',
+    })
       .then(res => res.json())
       .then(async (data) => {
         setEquipos(data);
@@ -23,7 +25,9 @@ export default function EquiposPage() {
           Promise.all(
             data.map(async (equipo) => {
               try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/equipments/${equipo.id}/qrs`);
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/equipments/${equipo.id}/qrs`, {
+                  credentials: 'include',
+                });
                 if (!res.ok) return [equipo.id, []];
                 const qrs = await res.json();
                 return [equipo.id, qrs];
@@ -35,7 +39,9 @@ export default function EquiposPage() {
           Promise.all(
             data.map(async (equipo) => {
               try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/equipments/${equipo.id}/documents`);
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/equipments/${equipo.id}/documents`, {
+                  credentials: 'include',
+                });
                 if (!res.ok) return [equipo.id, 0];
                 const docs = await res.json();
                 return [equipo.id, Array.isArray(docs) ? docs.length : 0];
@@ -56,7 +62,10 @@ export default function EquiposPage() {
     if (!window.confirm('¿Seguro que deseas eliminar este equipo?')) return;
     setDeletingId(id);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/equipments/${id}`, { method: 'DELETE' });
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/equipments/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
       const data = await response.json().catch(() => null);
       if (!response.ok) {
         throw new Error(data?.error || `Error ${response.status}: ${response.statusText}`);

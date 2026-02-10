@@ -15,11 +15,17 @@ export default function MaintenanceDetail() {
     setLoading(true);
     setError(null);
     Promise.all([
-      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/maintenances/${id}`)
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/maintenances/${id}`, {
+        credentials: 'include',
+      })
         .then(res => res.ok ? res.json() : Promise.reject('No encontrado')),
-      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/maintenances/${id}/documents`)
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/maintenances/${id}/documents`, {
+        credentials: 'include',
+      })
         .then(res => res.ok ? res.json() : []),
-      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/maintenances/${id}/photos`)
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/maintenances/${id}/photos`, {
+        credentials: 'include',
+      })
         .then(res => res.ok ? res.json() : [])
     ])
       .then(([mant, docs, phs]) => {
