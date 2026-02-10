@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import Link from 'next/link';
-
+import html2canvas from 'html2canvas';
+import EtiquetaEquipo from '../../components/EtiquetaEquipo';
 
 export default function EquiposPage() {
   const [equipos, setEquipos] = useState([]);
@@ -173,7 +174,24 @@ export default function EquiposPage() {
 // Dropdown de acciones para cada equipo (fuera del componente principal)
 function EquipmentActionsDropdown({ equipo, deletingId, handleDelete, qrs, isOpen, setIsOpen }) {
   const dropdownRef = useRef(null);
+  const etiquetaRef = useRef(null);
   const [isUp, setIsUp] = useState(false);
+
+  const handleDownloadEtiqueta = async () => {
+    if (!etiquetaRef.current) return;
+
+    const canvas = await html2canvas(etiquetaRef.current, {
+      scale: 3, // Aumentar la escala para mayor resolución
+      useCORS: true,
+      backgroundColor: null,
+    });
+
+    const link = document.createElement('a');
+    link.download = `etiqueta-${equipo.name.replace(/\s+/g, '_')}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    setIsOpen(null);
+  };
 
   const handleToggle = () => {
     if (!isOpen) {
@@ -215,6 +233,14 @@ function EquipmentActionsDropdown({ equipo, deletingId, handleDelete, qrs, isOpe
       {isOpen && (
         <div className={`origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20 ${isUp ? 'bottom-full mb-2' : 'top-full'}`}>
           <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+            <button
+              onClick={handleDownloadEtiqueta}
+              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-semibold w-full"
+              title="Descargar Etiqueta"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+              Descargar Etiqueta
+            </button>
             {qrs.map(qr => (
               <a
                 key={qr.token}
@@ -259,6 +285,19 @@ function EquipmentActionsDropdown({ equipo, deletingId, handleDelete, qrs, isOpe
           </div>
         </div>
       )}
+      {/* Contenedor oculto para renderizar la etiqueta antes de la captura */}
+      <div style={{ position: 'fixed', top: '-2000px', left: 0 }}>
+        {qrs.length > 0 && (
+          <div ref={etiquetaRef}>
+            <EtiquetaEquipo
+              nombre={equipo.name}
+              numeroSerie={equipo.serialNumber}
+              qrValue={`${window.location.origin}/qr/${qrs[0].token}`}
+              logoUrl="/Logo-Lortech.png"
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
