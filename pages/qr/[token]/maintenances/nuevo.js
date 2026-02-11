@@ -21,13 +21,12 @@ export default function NuevaMantencion() {
   const photosRef = useRef();
   const docsRef = useRef();
 
-console.log('User in NuevaMantencion:', user);
   // Validar token y cargar equipo
   useEffect(() => {
     if (!token) return;
     setValidando(true);
     setError(null);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/by-qr/${token}`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/equipments/by-qr/${token}`, {
       credentials: 'include',
     })
       .then(res => res.ok ? res.json() : null)
@@ -56,13 +55,16 @@ console.log('User in NuevaMantencion:', user);
     setSaveMsg(null);
     try {
       // 1. Crear mantención (POST JSON)
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/maintenances/equipment/${equipo.id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/maintenances/equipment/${equipo.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ ...form, userId: user?.userId}),
       });
-      if (!res.ok) throw new Error('Error al registrar mantención');
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: 'Error desconocido' }));
+        throw new Error(errorData.message || `Error del servidor: ${res.status}`);
+      }
       const mant = await res.json();
       // 2. Subir fotos si hay
       const photos = photosRef.current?.files;
@@ -71,11 +73,15 @@ console.log('User in NuevaMantencion:', user);
         for (let i = 0; i < photos.length; i++) {
           fd.append('photos', photos[i]);
         }
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/maintenances/${mant.id}/photos`, {
+        const photosRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/maintenances/${mant.id}/photos`, {
           method: 'POST',
           credentials: 'include',
           body: fd,
         });
+        if (!photosRes.ok) {
+          const errorData = await photosRes.json().catch(() => ({ message: 'Error al subir fotos' }));
+          throw new Error(errorData.message || 'Error al subir fotos');
+        }
       }
       // 3. Subir documentos si hay
       const docs = docsRef.current?.files;
@@ -84,16 +90,21 @@ console.log('User in NuevaMantencion:', user);
         for (let i = 0; i < docs.length; i++) {
           fd.append('documents', docs[i]);
         }
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/maintenances/${mant.id}/documents`, {
+        const docsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/maintenances/${mant.id}/documents`, {
           method: 'POST',
           credentials: 'include',
           body: fd,
         });
+        if (!docsRes.ok) {
+          const errorData = await docsRes.json().catch(() => ({ message: 'Error al subir documentos' }));
+          throw new Error(errorData.message || 'Error al subir documentos');
+        }
       }
       setSaveMsg('Mantención registrada correctamente');
       setTimeout(() => router.push(`/qr/${token}`), 1200);
-    } catch {
-      setSaveMsg('Error al registrar mantención');
+    } catch (err) {
+      console.error('Error al registrar mantención:', err);
+      setSaveMsg(err.message || 'Error al registrar mantención');
     }
     setSaving(false);
   };
@@ -201,7 +212,11 @@ console.log('User in NuevaMantencion:', user);
           >
             {saving ? 'Guardando...' : 'Registrar mantención'}
           </button>
-          {saveMsg && <div className={`text-xs ${saveMsg.includes('correctamente') ? 'text-green-600' : 'text-red-500'}`}>{saveMsg}</div>}
+          {saveMsg && (
+            <div className={`text-sm p-3 rounded ${saveMsg.includes('correctamente') ? 'text-green-700 bg-green-50 border border-green-200' : 'text-red-700 bg-red-50 border border-red-200'}`}>
+              {saveMsg}
+            </div>
+          )}
         </form>
       </div>
     </div>
