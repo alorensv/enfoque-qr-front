@@ -98,11 +98,14 @@ export default function UsuariosPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-gray-600">{usuario.email}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                          usuario.role === 'super' ? 'bg-red-100 text-red-700' : 
                           usuario.role === 'admin' ? 'bg-purple-100 text-purple-700' : 
-                          usuario.role === 'editor' ? 'bg-blue-100 text-blue-700' : 
                           'bg-gray-100 text-gray-700'
                         }`}>
-                          {usuario.role || 'user'}
+                          {usuario.role === 'super' ? 'Super Admin' : 
+                           usuario.role === 'admin' ? 'Admin' : 
+                           usuario.role === 'institution_user' ? 'Usuario' : 
+                           usuario.role}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

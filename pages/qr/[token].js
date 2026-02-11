@@ -42,14 +42,14 @@ export default function QrPage() {
     setError(null);
     let equipoId = null;
     Promise.all([
-      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/qr/${token}`, {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/qr/${token}`, {
         credentials: 'include',
       })
         .then(res => {
           if (!res.ok) throw new Error('QR no encontrado');
           return res.json();
         }),
-      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/by-qr/${token}`, {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/equipments/by-qr/${token}`, {
         credentials: 'include',
       })
         .then(res => res.ok ? res.json() : null)
@@ -61,7 +61,7 @@ export default function QrPage() {
         if (equipoData && equipoData.id) {
           equipoId = equipoData.id;
           // Obtener documentos reales
-          const docsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/${equipoId}/documents`, {
+          const docsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/equipments/${equipoId}/documents`, {
             credentials: 'include',
           });
           if (docsRes.ok) {
@@ -71,7 +71,7 @@ export default function QrPage() {
             setDocumentos([]);
           }
           // Obtener mantenciones reales
-          const mantRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/maintenances/equipment/${equipoId}`, {
+          const mantRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/maintenances/equipment/${equipoId}`, {
             credentials: 'include',
           });
           if (mantRes.ok) {
@@ -108,7 +108,7 @@ export default function QrPage() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/documents/${docId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/equipments/documents/${docId}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -141,10 +141,31 @@ export default function QrPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center py-8 px-4">
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-6 space-y-6">
+      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg overflow-hidden">
         
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4">
+        {/* Banner Superior con Logo y Botón Cotizar */}
+        <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 px-4 sm:px-6 py-4 flex items-center justify-between shadow-md">
+          <div className="flex items-center">
+            <img 
+              src="/logo_lortech_blanco.png" 
+              alt="Lortech" 
+              className="h-10 sm:h-12 md:h-14 w-auto object-contain"
+            />
+          </div>
+          <button
+            onClick={() => window.open('https://lortech.cl/contacto/', '_blank')}
+            className="bg-white hover:bg-gray-100 text-blue-900 font-bold px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center gap-2 text-sm sm:text-base whitespace-nowrap"
+          >
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span>Cotizar</span>
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-4">
           <div className="flex-grow">
             <h1 className="text-2xl font-bold text-gray-800">{equipo?.name || 'Equipo sin nombre'}</h1>
             <p className="text-sm text-gray-500">{equipo?.description}</p>
@@ -156,7 +177,7 @@ export default function QrPage() {
           </div>
           {equipo?.equipmentPhoto && (
             <img 
-              src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/public${equipo.equipmentPhoto}`} 
+              src={`${process.env.NEXT_PUBLIC_API_URL}/public${equipo.equipmentPhoto}`} 
               alt="Foto del equipo" 
               className="w-24 h-24 object-cover rounded-lg border-2 border-gray-200" 
             />
@@ -223,7 +244,7 @@ export default function QrPage() {
                     <div className="flex items-center gap-3">
                       {doc.filePath && (
                         <a
-                          href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/documents/${doc.id}/download`}
+                          href={`${process.env.NEXT_PUBLIC_API_URL}/equipments/documents/${doc.id}/download`}
                           className="text-blue-600 hover:underline text-sm font-medium"
                         >
                           Descargar
@@ -287,26 +308,27 @@ export default function QrPage() {
           </ul>
         </div>
 
-        {/* Footer y Acciones */}
-        <div className="border-t pt-6 text-center">
-          {isLoggedIn ? (
-            <button
-              className="w-full max-w-xs mx-auto px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold text-sm transition"
-              onClick={handleLogout}
-            >
-              Cerrar sesión
-            </button>
-          ) : (
-            <p className="text-sm text-gray-500">
-              ¿Eres administrador?{' '}
+          {/* Footer y Acciones */}
+          <div className="border-t pt-6 text-center">
+            {isLoggedIn ? (
               <button
-                className="text-blue-600 hover:underline font-semibold"
-                onClick={() => router.push(`/qr/login?token=${token}`)}
+                className="w-full max-w-xs mx-auto px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold text-sm transition"
+                onClick={handleLogout}
               >
-                Inicia sesión aquí
+                Cerrar sesión
               </button>
-            </p>
-          )}
+            ) : (
+              <p className="text-sm text-gray-500">
+                ¿Eres administrador?{' '}
+                <button
+                  className="text-blue-600 hover:underline font-semibold"
+                  onClick={() => router.push(`/qr/login?token=${token}`)}
+                >
+                  Inicia sesión aquí
+                </button>
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>

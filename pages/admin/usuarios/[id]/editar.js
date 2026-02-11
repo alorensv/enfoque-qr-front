@@ -16,7 +16,7 @@ export default function EditarUsuario() {
     confirmPassword: '',
     fullName: '',
     phone: '',
-    role: 'user',
+    role: 'institution_user',
     status: 1,
   });
 
@@ -37,7 +37,7 @@ export default function EditarUsuario() {
           confirmPassword: '',
           fullName: data.fullName || '',
           phone: data.phone || '',
-          role: data.role || 'user',
+          role: data.role || 'institution_user',
           status: data.status || 1,
         });
       })
@@ -243,9 +243,9 @@ export default function EditarUsuario() {
                   onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value="user">Usuario</option>
-                  <option value="editor">Editor</option>
+                  <option value="institution_user">Usuario Institución</option>
                   <option value="admin">Administrador</option>
+                  <option value="super">Super Administrador</option>
                 </select>
               </div>
 

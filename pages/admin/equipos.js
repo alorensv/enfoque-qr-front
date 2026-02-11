@@ -12,6 +12,7 @@ export default function EquiposPage() {
   const [qrMap, setQrMap] = useState({}); // { [equipoId]: [qrs] }
   const [docMap, setDocMap] = useState({}); // { [equipoId]: cantidad }
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [institutionLogo, setInstitutionLogo] = useState('/Logo-Lortech.png'); // Logo por defecto
 
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/equipments`, {
@@ -20,6 +21,18 @@ export default function EquiposPage() {
       .then(res => res.json())
       .then(async (data) => {
         setEquipos(data);
+        
+        // Obtener el logo de la institución desde el primer equipo
+        if (data.length > 0 && data[0].institution?.settings?.logo_url) {
+          const logoUrl = data[0].institution.settings.logo_url;
+          // Si la URL es relativa, agregar el prefijo del API
+          if (logoUrl.startsWith('/')) {
+            setInstitutionLogo(`${process.env.NEXT_PUBLIC_API_URL}/public${logoUrl}`);
+          } else {
+            setInstitutionLogo(logoUrl);
+          }
+        }
+        
         // Para cada equipo, buscar sus QR y documentos
         const [qrResults, docResults] = await Promise.all([
           Promise.all(
@@ -166,6 +179,7 @@ export default function EquiposPage() {
                           qrs={qrMap[equipo.id] || []}
                           isOpen={activeDropdown === equipo.id}
                           setIsOpen={setActiveDropdown}
+                          institutionLogo={institutionLogo}
                         />
                       </td>
                     </tr>
@@ -181,7 +195,7 @@ export default function EquiposPage() {
 }
 
 // Dropdown de acciones para cada equipo (fuera del componente principal)
-function EquipmentActionsDropdown({ equipo, deletingId, handleDelete, qrs, isOpen, setIsOpen }) {
+function EquipmentActionsDropdown({ equipo, deletingId, handleDelete, qrs, isOpen, setIsOpen, institutionLogo }) {
   const dropdownRef = useRef(null);
   const etiquetaRef = useRef(null);
   const [isUp, setIsUp] = useState(false);
@@ -302,7 +316,7 @@ function EquipmentActionsDropdown({ equipo, deletingId, handleDelete, qrs, isOpe
               nombre={equipo.name}
               numeroSerie={equipo.serialNumber}
               qrValue={`${window.location.origin}/qr/${qrs[0].token}`}
-              logoUrl="/Logo-Lortech.png"
+              logoUrl={institutionLogo}
             />
           </div>
         )}

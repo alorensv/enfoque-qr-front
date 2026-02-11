@@ -14,7 +14,7 @@ export default function NuevoUsuario() {
     confirmPassword: '',
     fullName: '',
     phone: '',
-    role: 'user',
+    role: 'institution_user',
   });
 
   const handleChange = (e) => {
@@ -190,9 +190,9 @@ export default function NuevoUsuario() {
                   onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value="user">Usuario</option>
-                  <option value="editor">Editor</option>
+                  <option value="institution_user">Usuario Institución</option>
                   <option value="admin">Administrador</option>
+                  <option value="super">Super Administrador</option>
                 </select>
               </div>
             </div>
