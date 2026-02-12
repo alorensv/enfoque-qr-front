@@ -234,7 +234,7 @@ export default function QrPage() {
                     <div className="flex-grow">
                       <p className="font-semibold text-gray-900">
                         {doc.name}
-                        {doc.isPrivate && <span className="ml-2 text-xs font-bold text-red-600">(Privado)</span>}
+                        {!!doc.isPrivate && <span className="ml-2 text-xs font-bold text-red-600">(Privado)</span>}
                       </p>
                       <p className="text-xs text-gray-500">
                         {doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : ''}
