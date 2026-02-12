@@ -51,6 +51,36 @@ export default function NuevaMantencion() {
       setSaveMsg('Usuario no autenticado');
       return;
     }
+    
+    // Validar tamaño de archivos (máximo 20MB por solicitud)
+    const MAX_SIZE = 20 * 1024 * 1024; // 20MB en bytes
+    const photos = photosRef.current?.files;
+    const docs = docsRef.current?.files;
+    
+    // Calcular tamaño total de fotos
+    let photosSize = 0;
+    if (photos && photos.length > 0) {
+      for (let i = 0; i < photos.length; i++) {
+        photosSize += photos[i].size;
+      }
+      if (photosSize > MAX_SIZE) {
+        setSaveMsg(`Las fotos exceden el límite de 20MB. Tamaño actual: ${(photosSize / (1024 * 1024)).toFixed(2)}MB`);
+        return;
+      }
+    }
+    
+    // Calcular tamaño total de documentos
+    let docsSize = 0;
+    if (docs && docs.length > 0) {
+      for (let i = 0; i < docs.length; i++) {
+        docsSize += docs[i].size;
+      }
+      if (docsSize > MAX_SIZE) {
+        setSaveMsg(`Los documentos exceden el límite de 20MB. Tamaño actual: ${(docsSize / (1024 * 1024)).toFixed(2)}MB`);
+        return;
+      }
+    }
+    
     setSaving(true);
     setSaveMsg(null);
     try {
@@ -79,6 +109,9 @@ export default function NuevaMantencion() {
           body: fd,
         });
         if (!photosRes.ok) {
+          if (photosRes.status === 413) {
+            throw new Error('Las fotos exceden el límite de 20MB permitido por el servidor');
+          }
           const errorData = await photosRes.json().catch(() => ({ message: 'Error al subir fotos' }));
           throw new Error(errorData.message || 'Error al subir fotos');
         }
@@ -96,6 +129,9 @@ export default function NuevaMantencion() {
           body: fd,
         });
         if (!docsRes.ok) {
+          if (docsRes.status === 413) {
+            throw new Error('Los documentos exceden el límite de 20MB permitido por el servidor');
+          }
           const errorData = await docsRes.json().catch(() => ({ message: 'Error al subir documentos' }));
           throw new Error(errorData.message || 'Error al subir documentos');
         }
@@ -194,6 +230,7 @@ export default function NuevaMantencion() {
               className="block mt-1"
               data-testid="photos-input"
             />
+            <span className="text-xs text-gray-500 mt-1 block">Máximo 20MB en total por grupo de fotos</span>
           </label>
           <label className="text-sm font-semibold">Documentos (opcional, puedes seleccionar varios):
             <input
@@ -204,6 +241,7 @@ export default function NuevaMantencion() {
               className="block mt-1"
               data-testid="documents-input"
             />
+            <span className="text-xs text-gray-500 mt-1 block">Máximo 20MB en total por grupo de documentos</span>
           </label>
           <button
             type="submit"
