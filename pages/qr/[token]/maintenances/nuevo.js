@@ -45,6 +45,59 @@ export default function NuevaMantencion() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // Función para comprimir imágenes
+  const compressImage = (file, maxSizeMB = 1) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          // Redimensionar si es muy grande (máximo 1920px en el lado más largo)
+          const maxDimension = 1920;
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = (height / width) * maxDimension;
+              width = maxDimension;
+            } else {
+              width = (width / height) * maxDimension;
+              height = maxDimension;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Comprimir con calidad ajustable
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                const compressedFile = new File([blob], file.name, {
+                  type: 'image/jpeg',
+                  lastModified: Date.now(),
+                });
+                resolve(compressedFile);
+              } else {
+                reject(new Error('Error al comprimir imagen'));
+              }
+            },
+            'image/jpeg',
+            0.8 // Calidad 80%
+          );
+        };
+        img.onerror = reject;
+      };
+      reader.onerror = reject;
+    });
+  };
+
   const handleSubmit = async e => {
     e.preventDefault();
     if(!user.userId){
@@ -96,12 +149,26 @@ export default function NuevaMantencion() {
         throw new Error(errorData.message || `Error del servidor: ${res.status}`);
       }
       const mant = await res.json();
-      // 2. Subir fotos si hay
+      
+      // 2. Subir fotos si hay (con compresión)
       const photos = photosRef.current?.files;
       if (photos && photos.length > 0) {
-        const fd = new FormData();
+        setSaveMsg('Optimizando fotos...');
+        const compressedPhotos = [];
         for (let i = 0; i < photos.length; i++) {
-          fd.append('photos', photos[i]);
+          try {
+            const compressed = await compressImage(photos[i]);
+            compressedPhotos.push(compressed);
+          } catch (err) {
+            console.warn('Error al comprimir foto, usando original:', err);
+            compressedPhotos.push(photos[i]);
+          }
+        }
+        
+        setSaveMsg('Subiendo fotos...');
+        const fd = new FormData();
+        for (let i = 0; i < compressedPhotos.length; i++) {
+          fd.append('photos', compressedPhotos[i]);
         }
         const photosRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/maintenances/${mant.id}/photos`, {
           method: 'POST',
@@ -119,6 +186,7 @@ export default function NuevaMantencion() {
       // 3. Subir documentos si hay
       const docs = docsRef.current?.files;
       if (docs && docs.length > 0) {
+        setSaveMsg('Subiendo documentos...');
         const fd = new FormData();
         for (let i = 0; i < docs.length; i++) {
           fd.append('documents', docs[i]);
@@ -230,7 +298,7 @@ export default function NuevaMantencion() {
               className="block mt-1"
               data-testid="photos-input"
             />
-            <span className="text-xs text-gray-500 mt-1 block">Máximo 20MB en total por grupo de fotos</span>
+            <span className="text-xs text-gray-500 mt-1 block">Las fotos se optimizarán automáticamente para carga rápida</span>
           </label>
           <label className="text-sm font-semibold">Documentos (opcional, puedes seleccionar varios):
             <input
