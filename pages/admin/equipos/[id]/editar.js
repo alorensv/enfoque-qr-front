@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import AdminLayout from '../../../../components/AdminLayout';
+import EquipmentForm from '../../../../components/EquipmentForm';
 
 export default function EditarEquipo() {
   const router = useRouter();
   const { id } = router.query;
-  const [form, setForm] = useState({ name: '', serialNumber: '', description: '', status: '' });
+  const [initialData, setInitialData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -17,7 +18,7 @@ export default function EditarEquipo() {
     })
       .then(res => res.json())
       .then(data => {
-        setForm({
+        setInitialData({
           name: data.name || '',
           serialNumber: data.serialNumber || '',
           description: data.description || '',
@@ -31,12 +32,7 @@ export default function EditarEquipo() {
       });
   }, [id]);
 
-  const handleChange = e => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async e => {
-    e.preventDefault();
+  const handleSubmit = async ({ formData }) => {
     setSaving(true);
     setError(null);
     try {
@@ -44,7 +40,7 @@ export default function EditarEquipo() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify(form),
+        body: JSON.stringify(formData),
       });
       if (!res.ok) throw new Error('Error al actualizar equipo');
       router.push('/admin/equipos');
@@ -54,39 +50,34 @@ export default function EditarEquipo() {
     }
   };
 
-  if (loading) return <AdminLayout><div className="text-center py-10 text-gray-500">Cargando equipo...</div></AdminLayout>;
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="text-center py-10 text-gray-500">Cargando equipo...</div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
-      <div className="max-w-xl mx-auto py-10">
-        <h1 className="text-2xl font-bold mb-6 text-gray-800">Editar equipo</h1>
-        <form onSubmit={handleSubmit} className="bg-white p-8 rounded shadow space-y-6">
-          <div>
-            <label className="block text-gray-700 font-semibold mb-1">Nombre</label>
-            <input name="name" value={form.name} onChange={handleChange} required className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-200" />
-          </div>
-          <div>
-            <label className="block text-gray-700 font-semibold mb-1">N° de serie</label>
-            <input name="serialNumber" value={form.serialNumber} onChange={handleChange} className="w-full border border-gray-300 rounded px-3 py-2" />
-          </div>
-          <div>
-            <label className="block text-gray-700 font-semibold mb-1">Descripción</label>
-            <textarea name="description" value={form.description} onChange={handleChange} className="w-full border border-gray-300 rounded px-3 py-2" />
-          </div>
-          <div>
-            <label className="block text-gray-700 font-semibold mb-1">Estado</label>
-            <select name="status" value={form.status} onChange={handleChange} className="w-full border border-gray-300 rounded px-3 py-2">
-              <option value="">Selecciona estado</option>
-              <option value="activo">Activo</option>
-              <option value="inactivo">Inactivo</option>
-            </select>
-          </div>
-          {error && <div className="text-red-500 text-sm">{error}</div>}
-          <div className="flex justify-end gap-2">
-            <button type="button" className="px-4 py-2 rounded bg-gray-200 text-gray-700 font-semibold" onClick={() => router.push('/admin/equipos')}>Cancelar</button>
-            <button type="submit" disabled={saving} className="px-4 py-2 rounded bg-blue-600 text-white font-semibold shadow hover:bg-blue-700 transition">{saving ? 'Guardando...' : 'Guardar'}</button>
-          </div>
-        </form>
+      <div className="max-w-xl mx-auto py-10 px-4">
+        <h1 className="text-3xl font-extrabold mb-8 text-gray-900 flex items-center gap-2">
+          <svg className="w-7 h-7 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+          Editar equipo
+        </h1>
+        {initialData && (
+          <EquipmentForm
+            initialData={initialData}
+            onSubmit={handleSubmit}
+            onCancel={() => router.push('/admin/equipos')}
+            submitLabel="Guardar cambios"
+            loading={saving}
+            showPhotoUpload={false}
+            error={error}
+          />
+        )}
       </div>
     </AdminLayout>
   );

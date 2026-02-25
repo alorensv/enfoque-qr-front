@@ -11,7 +11,6 @@ export default function NuevoDocumento() {
     name: '',
     type: '',
     file: null,
-    userId: 1, // Simulado, deberías obtener el usuario real
     isPrivate: false,
   });
   const [saving, setSaving] = useState(false);
@@ -37,28 +36,39 @@ export default function NuevoDocumento() {
       setSaving(false);
       return;
     }
-    // Obtener institutionId del usuario autenticado
+    // Obtener institutionId y userId del usuario autenticado
     const institutionId = user?.institutionId;
+    const userId = user?.userId;
+    
     if (!institutionId) {
       setMsg('No se pudo obtener la institución del usuario');
       setSaving(false);
       return;
     }
+    
+    if (!userId) {
+      setMsg('No se pudo obtener el usuario autenticado');
+      setSaving(false);
+      return;
+    }
+    
     const data = new FormData();
 
     data.append('file', form.file);
     data.append('name', form.name);
     data.append('type', form.type);
-    data.append('userId', String(form.userId));
+    data.append('userId', String(userId));
     data.append('institutionId', String(institutionId));
-    data.append('isPrivate', form.isPrivate ? 1 : 0);
+    data.append('isPrivate', form.isPrivate ? '1' : '0');
+
+    console.log(user);
 
     console.log(JSON.stringify(data));
     // Mostrar en consola todos los campos y valores del FormData
     for (let pair of data.entries()) {
       console.log(pair[0], pair[1]);
     }
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/${equipmentId}/documents`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/equipments/${equipmentId}/documents`, {
       method: 'POST',
       credentials: 'include',
       body: data

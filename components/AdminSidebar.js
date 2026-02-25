@@ -2,7 +2,7 @@ const menu = [
   { label: 'Dashboard', icon: '🏠', href: '/admin/home' },
   { label: 'Usuarios', icon: '👤', href: '/admin/usuarios' },
   { label: 'Equipos', icon: '🖥️', href: '/admin/equipos' },
-  { label: 'Documentos', icon: '📄', href: '/admin/documentos' },
+  { label: 'Documentos', icon: '📄', href: '/admin/documents' },
   { label: 'Mantenciones', icon: '🛠️', href: '/admin/mantenciones' },
 ];
 
