@@ -1,14 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import AdminLayout from '../../../components/AdminLayout';
+import { qrApi } from '../../../services/api';
 
 export default function GenerateQRBatch() {
   const router = useRouter();
   const [quantity, setQuantity] = useState(10);
   const [prefix, setPrefix] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingAvailable, setLoadingAvailable] = useState(true);
   const [generatedCodes, setGeneratedCodes] = useState([]);
+  const [availableCodes, setAvailableCodes] = useState([]);
   const [error, setError] = useState('');
+  const [baseUrl, setBaseUrl] = useState('');
+
+  useEffect(() => {
+    // Obtener el dominio base del frontend
+    if (typeof window !== 'undefined') {
+      setBaseUrl(window.location.origin);
+    }
+    // Cargar códigos QR disponibles
+    fetchAvailableCodes();
+  }, []);
+
+  const fetchAvailableCodes = async () => {
+    setLoadingAvailable(true);
+    try {
+      const data = await qrApi.getAvailable(1, 1000);
+      setAvailableCodes(data.data || []);
+    } catch (err) {
+      console.error('Error al cargar códigos disponibles:', err);
+    } finally {
+      setLoadingAvailable(false);
+    }
+  };
 
   const handleGenerate = async (e) => {
     e.preventDefault();
@@ -17,7 +42,7 @@ export default function GenerateQRBatch() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/qr/generate-batch`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/qr/generate-batch`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -36,6 +61,10 @@ export default function GenerateQRBatch() {
 
       const data = await response.json();
       setGeneratedCodes(data.qr_codes);
+      
+      // Recargar lista de disponibles
+      await fetchAvailableCodes();
+      
       alert(`${data.generated} códigos QR generados exitosamente`);
     } catch (err) {
       setError(err.message);
@@ -46,14 +75,20 @@ export default function GenerateQRBatch() {
   };
 
   const handleDownloadCSV = () => {
-    if (generatedCodes.length === 0) {
-      alert('No hay códigos QR generados');
+    // Combinar códigos recién generados con disponibles
+    const allCodes = [...generatedCodes, ...availableCodes];
+    
+    if (allCodes.length === 0) {
+      alert('No hay códigos QR para descargar');
       return;
     }
 
     const csv = [
       'id,token,url,created_at',
-      ...generatedCodes.map(qr => `${qr.id},${qr.token},${qr.url},${qr.created_at}`)
+      ...allCodes.map(qr => {
+        const fullUrl = qr.url?.startsWith('http') ? qr.url : `${baseUrl}${qr.url || '/qr/' + qr.token}`;
+        return `${qr.id},${qr.token},${fullUrl},${qr.created_at}`;
+      })
     ].join('\n');
 
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -135,12 +170,28 @@ export default function GenerateQRBatch() {
         </div>
 
         {/* Lista de códigos generados */}
-        {generatedCodes.length > 0 && (
+        {!loadingAvailable && (generatedCodes.length > 0 || availableCodes.length > 0) && (
           <div className="bg-white shadow-md rounded-lg p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Códigos QR Generados ({generatedCodes.length})
-              </h2>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Códigos QR Disponibles
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  {generatedCodes.length > 0 && (
+                    <span className="text-green-600 font-semibold">
+                      {generatedCodes.length} recién generados
+                    </span>
+                  )}
+                  {generatedCodes.length > 0 && availableCodes.length > 0 && ' • '}
+                  {availableCodes.length > 0 && (
+                    <span>
+                      {availableCodes.length} anteriores disponibles
+                    </span>
+                  )}
+                  {' • '}Total: {generatedCodes.length + availableCodes.length}
+                </p>
+              </div>
               <button
                 onClick={handleDownloadCSV}
                 className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
@@ -165,32 +216,78 @@ export default function GenerateQRBatch() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Estado
                     </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Fecha Creación
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {generatedCodes.map((qr) => (
-                    <tr key={qr.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {qr.id}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
-                        {qr.token}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
-                        <a href={qr.url} target="_blank" rel="noopener noreferrer">
-                          {qr.url}
-                        </a>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                          {qr.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {/* Códigos recién generados primero */}
+                  {generatedCodes.map((qr) => {
+                    const fullUrl = qr.url?.startsWith('http') ? qr.url : `${baseUrl}${qr.url || '/qr/' + qr.token}`;
+                    return (
+                      <tr key={`new-${qr.id}`} className="bg-green-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {qr.id}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                          {qr.token}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
+                          <a href={fullUrl} target="_blank" rel="noopener noreferrer">
+                            {fullUrl}
+                          </a>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            Nuevo
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(qr.created_at).toLocaleString('es-CL')}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {/* Códigos disponibles anteriores */}
+                  {availableCodes.map((qr) => {
+                    const fullUrl = qr.url_publica?.startsWith('http') 
+                      ? qr.url_publica 
+                      : `${baseUrl}${qr.url_publica || '/qr/' + qr.token}`;
+                    return (
+                      <tr key={`available-${qr.id}`}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {qr.id}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                          {qr.token}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
+                          <a href={fullUrl} target="_blank" rel="noopener noreferrer">
+                            {fullUrl}
+                          </a>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                            Disponible
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(qr.created_at).toLocaleString('es-CL')}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {/* Mensaje de carga */}
+        {loadingAvailable && (
+          <div className="bg-white shadow-md rounded-lg p-6 text-center">
+            <p className="text-gray-600">Cargando códigos QR disponibles...</p>
           </div>
         )}
       </div>
