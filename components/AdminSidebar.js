@@ -4,6 +4,7 @@ const menu = [
   { label: 'Equipos', icon: '🖥️', href: '/admin/equipos' },
   { label: 'Documentos', icon: '📄', href: '/admin/documents' },
   { label: 'Mantenciones', icon: '🛠️', href: '/admin/mantenciones' },
+  { label: 'QR Universal', icon: '🔍', href: '/admin/qr-universal' },
 ];
 
 export default function AdminSidebar() {
