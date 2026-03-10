@@ -15,15 +15,15 @@ export default function MaintenanceDetail() {
     setLoading(true);
     setError(null);
     Promise.all([
-      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/maintenances/${id}`, {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/maintenances/${id}`, {
         credentials: 'include',
       })
         .then(res => res.ok ? res.json() : Promise.reject('No encontrado')),
-      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/maintenances/${id}/documents`, {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/maintenances/${id}/documents`, {
         credentials: 'include',
       })
         .then(res => res.ok ? res.json() : []),
-      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/maintenances/${id}/photos`, {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/maintenances/${id}/photos`, {
         credentials: 'include',
       })
         .then(res => res.ok ? res.json() : [])
@@ -74,7 +74,7 @@ export default function MaintenanceDetail() {
                 <div className="flex items-center gap-2">
                   {doc.filePath ? (
                     <a
-                      href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/maintenances/documents/${doc.id}/download`}
+                      href={`${process.env.NEXT_PUBLIC_API_URL}/maintenances/documents/${doc.id}/download`}
                       className="text-blue-600 hover:underline text-xs"
                       target="_blank"
                       rel="noopener noreferrer"
@@ -98,7 +98,7 @@ export default function MaintenanceDetail() {
             {photos.map(photo => (
               <div key={photo.id} className="bg-gray-100 rounded-lg p-2 flex flex-col items-center">
                 <img
-                  src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/public${photo.filePath}`}
+                  src={`${process.env.NEXT_PUBLIC_API_URL}/maintenances/photos/${photo.id}/file`}
                   alt="Foto de mantención"
                   className="w-full h-32 object-cover rounded mb-2 border"
                   style={{ maxWidth: 180 }}

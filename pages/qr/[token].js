@@ -177,7 +177,7 @@ export default function QrPage() {
           </div>
           {equipo?.equipmentPhoto && (
             <img 
-              src={`${process.env.NEXT_PUBLIC_API_URL}/public${equipo.equipmentPhoto}`} 
+              src={`${process.env.NEXT_PUBLIC_API_URL}/equipments/${equipo.id}/photo`} 
               alt="Foto del equipo" 
               className="w-24 h-24 object-cover rounded-lg border-2 border-gray-200" 
             />

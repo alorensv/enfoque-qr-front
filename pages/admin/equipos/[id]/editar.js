@@ -13,7 +13,7 @@ export default function EditarEquipo() {
 
   useEffect(() => {
     if (!id) return;
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/${id}`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/equipments/${id}`, {
       credentials: 'include',
     })
       .then(res => res.json())
@@ -36,7 +36,7 @@ export default function EditarEquipo() {
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/equipments/${id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/equipments/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
