@@ -11,8 +11,16 @@ export default function EquiposPage() {
   const [deletingId, setDeletingId] = useState(null);
   const [qrMap, setQrMap] = useState({}); // { [equipoId]: [qrs] }
   const [docMap, setDocMap] = useState({}); // { [equipoId]: cantidad }
+  const [scanMap, setScanMap] = useState({}); // { [equipoId]: scanCount }
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [institutionLogo, setInstitutionLogo] = useState('/Logo-Lortech.png'); // Logo por defecto
+  // Scan detail modal states
+  const [scanDetailModal, setScanDetailModal] = useState(false);
+  const [scanDetailEquipo, setScanDetailEquipo] = useState(null);
+  const [scanLogs, setScanLogs] = useState([]);
+  const [scanLogsLoading, setScanLogsLoading] = useState(false);
+  const [scanLogsPage, setScanLogsPage] = useState(1);
+  const [scanLogsTotal, setScanLogsTotal] = useState(0);
 
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/equipments`, {
@@ -66,6 +74,19 @@ export default function EquiposPage() {
         ]);
         setQrMap(Object.fromEntries(qrResults));
         setDocMap(Object.fromEntries(docResults));
+        // Obtener conteos de escaneos en lote
+        if (data.length > 0) {
+          const equipmentIds = data.map(e => e.id);
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/equipments/scan-counts`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ equipmentIds }),
+          })
+            .then(res => res.ok ? res.json() : {})
+            .then(counts => setScanMap(counts))
+            .catch(() => {});
+        }
       })
       .catch(() => setError('Error al cargar los equipos'))
       .finally(() => setLoading(false));
@@ -94,6 +115,43 @@ export default function EquiposPage() {
       delete copy[id];
       return copy;
     });
+  };
+
+  const handleOpenScanDetail = async (equipmentId, equipmentName) => {
+    setScanDetailEquipo({ id: equipmentId, name: equipmentName });
+    setScanDetailModal(true);
+    setScanLogsLoading(true);
+    setScanLogsPage(1);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/equipments/${equipmentId}/scan-logs?page=1&limit=20`,
+        { credentials: 'include' }
+      );
+      if (res.ok) {
+        const result = await res.json();
+        setScanLogs(result.data);
+        setScanLogsTotal(result.total);
+      }
+    } catch {}
+    setScanLogsLoading(false);
+  };
+
+  const handleScanLogsPageChange = async (newPage) => {
+    if (!scanDetailEquipo) return;
+    setScanLogsLoading(true);
+    setScanLogsPage(newPage);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/equipments/${scanDetailEquipo.id}/scan-logs?page=${newPage}&limit=20`,
+        { credentials: 'include' }
+      );
+      if (res.ok) {
+        const result = await res.json();
+        setScanLogs(result.data);
+        setScanLogsTotal(result.total);
+      }
+    } catch {}
+    setScanLogsLoading(false);
   };
 
   return (
@@ -147,6 +205,7 @@ export default function EquiposPage() {
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Serie</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Estado</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">QR</th>
+                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Escaneos</th>
                     <th className="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Acciones</th>
                   </tr>
                 </thead>
@@ -179,6 +238,19 @@ export default function EquiposPage() {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <button
+                          onClick={() => handleOpenScanDetail(equipo.id, equipo.name)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 hover:bg-amber-100 text-sm font-bold transition cursor-pointer"
+                          title="Ver detalle de escaneos"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          {scanMap[equipo.id] || 0}
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
                         <EquipmentActionsDropdown
                           equipo={equipo}
                           deletingId={deletingId}
@@ -197,6 +269,85 @@ export default function EquiposPage() {
           )}
         </div>
       </div>
+
+      {/* Modal de detalle de escaneos */}
+      {scanDetailModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Escaneos QR</h2>
+                <p className="text-sm text-gray-500">{scanDetailEquipo?.name} — {scanLogsTotal} escaneos totales</p>
+              </div>
+              <button onClick={() => setScanDetailModal(false)} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Tabla de logs */}
+            <div className="overflow-auto flex-1 px-6 py-4">
+              {scanLogsLoading ? (
+                <p className="text-center text-gray-400 py-8">Cargando...</p>
+              ) : scanLogs.length === 0 ? (
+                <p className="text-center text-gray-400 py-8">No hay escaneos registrados</p>
+              ) : (
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs text-gray-500 uppercase">
+                      <th className="pb-2">Fecha</th>
+                      <th className="pb-2">Tipo</th>
+                      <th className="pb-2">IP</th>
+                      <th className="pb-2">Búsqueda</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {scanLogs.map(log => (
+                      <tr key={log.id} className="hover:bg-gray-50">
+                        <td className="py-2 pr-4">{new Date(log.scannedAt).toLocaleString('es-CL')}</td>
+                        <td className="py-2 pr-4">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                            log.searchType === 'direct'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-purple-100 text-purple-700'
+                          }`}>
+                            {log.searchType === 'direct' ? 'Directo' : 'Universal'}
+                          </span>
+                        </td>
+                        <td className="py-2 pr-4 text-gray-500 font-mono text-xs">{log.ip}</td>
+                        <td className="py-2 text-gray-500">{log.searchQuery || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Paginación */}
+            {scanLogsTotal > 20 && (
+              <div className="flex items-center justify-between px-6 py-3 border-t bg-gray-50">
+                <span className="text-xs text-gray-500">
+                  Página {scanLogsPage} de {Math.ceil(scanLogsTotal / 20)}
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    disabled={scanLogsPage <= 1}
+                    onClick={() => handleScanLogsPageChange(scanLogsPage - 1)}
+                    className="px-3 py-1 text-sm rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+                  >Anterior</button>
+                  <button
+                    disabled={scanLogsPage >= Math.ceil(scanLogsTotal / 20)}
+                    onClick={() => handleScanLogsPageChange(scanLogsPage + 1)}
+                    className="px-3 py-1 text-sm rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+                  >Siguiente</button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }

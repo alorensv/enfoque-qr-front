@@ -58,6 +58,11 @@ export default function QrPage() {
         setQr(qrData);
         setEquipo(equipoData);
         setEditData(equipoData ? { ...equipoData } : null);
+        // Registrar escaneo directo (fire-and-forget)
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/qr/${token}/scan`, {
+          method: 'POST',
+          credentials: 'include',
+        }).catch(() => {});
         if (equipoData && equipoData.id) {
           equipoId = equipoData.id;
           // Obtener documentos reales

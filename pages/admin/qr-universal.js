@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import withAuth from '../../contexts/withAuth';
 import { useAuth } from '../../contexts/AuthContext';
 import { QRCodeSVG } from 'qrcode.react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -12,13 +14,13 @@ function QRUniversalManager() {
   const [logoUrl, setLogoUrl] = useState('');
   const [universalQRUrl, setUniversalQRUrl] = useState('');
   const [loading, setLoading] = useState(true);
+  const labelRef = useRef(null);
 
   useEffect(() => {
     if (!user?.institutionId) return;
     
     const fetchData = async () => {
       try {
-        // Cargar datos de la institución
         const response = await fetch(`${API_URL}/institutions/${user.institutionId}`, {
           credentials: 'include'
         });
@@ -27,12 +29,10 @@ function QRUniversalManager() {
           const data = await response.json();
           setInstitution(data);
           
-          // Obtener logo de settings si existe
           if (data.settings && data.settings.logo_url) {
             setLogoUrl(data.settings.logo_url);
           }
           
-          // Generar URL del QR universal
           const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
           setUniversalQRUrl(`${baseUrl}/qr/universal/${data.slug}`);
         }
@@ -46,96 +46,61 @@ function QRUniversalManager() {
     fetchData();
   }, [user]);
 
-  const handleDownloadQR = () => {
-    // Obtener el SVG del QR
-    const svg = document.getElementById('universal-qr-svg');
-    if (!svg) return;
+  const handleDownloadQR = async () => {
+    if (!labelRef.current) return;
 
-    // Convertir SVG a data URL
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-    const svgUrl = URL.createObjectURL(svgBlob);
+    try {
+      const canvas = await html2canvas(labelRef.current, {
+        scale: 3, // Alta resolución
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
 
-    // Crear canvas para convertir a PNG
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    
-    // Tamaño aumentado para incluir logo y márgenes
-    const qrSize = 300;
-    const logoSize = 80;
-    const padding = 40;
-    const totalHeight = logoUrl ? qrSize + logoSize + padding * 3 : qrSize + padding * 2;
-    
-    canvas.width = qrSize + padding * 2;
-    canvas.height = totalHeight;
-    
-    // Fondo blanco
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
+      const url = canvas.toDataURL('image/png');
+      const downloadLink = document.createElement('a');
+      downloadLink.href = url;
+      downloadLink.download = `etiqueta-qr-${institution?.slug || 'universal'}.png`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    } catch (error) {
+      console.error('Error al descargar PNG:', error);
+    }
+  };
+  const handleDownloadPDF = async () => {
+    if (!labelRef.current) return;
 
-    img.onload = () => {
-      let yOffset = padding;
+    try {
+      const canvas = await html2canvas(labelRef.current, {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
+
+      const imgData = canvas.toDataURL('image/png');
       
-      // Si hay logo, dibujarlo primero
-      if (logoUrl) {
-        const logo = new Image();
-        logo.crossOrigin = 'anonymous';
-        logo.onload = () => {
-          // Calcular dimensiones proporcionales del logo
-          const logoAspectRatio = logo.width / logo.height;
-          let drawWidth = logoSize;
-          let drawHeight = logoSize;
-          
-          if (logoAspectRatio > 1) {
-            drawHeight = logoSize / logoAspectRatio;
-          } else {
-            drawWidth = logoSize * logoAspectRatio;
-          }
-          
-          // Centrar el logo
-          const logoX = (canvas.width - drawWidth) / 2;
-          ctx.drawImage(logo, logoX, yOffset, drawWidth, drawHeight);
-          
-          // Dibujar QR debajo del logo
-          yOffset += logoSize + padding;
-          ctx.drawImage(img, padding, yOffset, qrSize, qrSize);
-          
-          // Descargar
-          downloadCanvas();
-        };
-        logo.onerror = () => {
-          // Si el logo falla, solo dibujar el QR
-          ctx.drawImage(img, padding, yOffset, qrSize, qrSize);
-          downloadCanvas();
-        };
-        const fullLogoUrl = logoUrl.startsWith('http') ? logoUrl : `${API_URL}${logoUrl}`;
-        logo.src = fullLogoUrl;
-      } else {
-        // Sin logo, solo QR
-        ctx.drawImage(img, padding, yOffset, qrSize, qrSize);
-        downloadCanvas();
-      }
-      
-      function downloadCanvas() {
-        canvas.toBlob((blob) => {
-          const url = URL.createObjectURL(blob);
-          const downloadLink = document.createElement('a');
-          downloadLink.href = url;
-          downloadLink.download = `qr-universal-${institution.slug}.png`;
-          document.body.appendChild(downloadLink);
-          downloadLink.click();
-          document.body.removeChild(downloadLink);
-          URL.revokeObjectURL(url);
-        });
-        
-        URL.revokeObjectURL(svgUrl);
-      }
-    };
+      // Crear PDF A4 (210 x 297 mm)
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
 
-    img.src = svgUrl;
+      // Calcular dimensiones para que quepa en el PDF manteniendo proporción
+      // El canvas original tiene 380px de ancho aproximadamente
+      // Vamos a darle un ancho de 80mm en el PDF para que sea tamaño etiqueta estándar
+      const imgWidth = 80; 
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      // Ubicar en la parte superior izquierda con un pequeño margen
+      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+      
+      pdf.save(`etiqueta-qr-${institution?.slug || 'universal'}.pdf`);
+    } catch (error) {
+      console.error('Error al descargar PDF:', error);
+    }
   };
 
   const handlePrintQR = () => {
@@ -195,43 +160,105 @@ function QRUniversalManager() {
             </div>
           </div>
 
-          {/* QR Code */}
-          <div className="print-section" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '2rem' }}>
-            {logoUrl && (
-              <div style={{ marginBottom: '1rem' }}>
-                <img 
-                  src={logoUrl.startsWith('http') ? logoUrl : `${API_URL}${logoUrl}`} 
-                  alt={institution.name} 
-                  style={{ height: '80px', objectFit: 'contain' }}
-                  onError={(e) => { e.target.style.display = 'none'; }}
+          {/* QR Design Preview / Label Section */}
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            background: '#f8fafc',
+            padding: '3rem',
+            borderRadius: '16px',
+            border: '2px dashed #e2e8f0',
+            marginBottom: '2rem'
+          }}>
+            <div 
+              ref={labelRef}
+              id="qr-label-professional"
+              className="print-section"
+              style={{
+                width: '380px',
+                padding: '40px 30px',
+                background: '#ffffff',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textAlign: 'center',
+                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+                borderRadius: '12px',
+                border: '1px solid #e5e7eb',
+                position: 'relative'
+              }}
+            >
+              {/* Logo de institución */}
+              <div style={{ height: '70px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {logoUrl ? (
+                  <img 
+                    src={logoUrl.startsWith('http') ? logoUrl : `${API_URL}${logoUrl}`} 
+                    alt={institution.name} 
+                    crossOrigin="anonymous"
+                    style={{ maxHeight: '100%', maxWidth: '200px', objectFit: 'contain' }}
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
+                ) : (
+                  <div style={{ fontWeight: '800', fontSize: '24px', color: '#1e293b' }}>
+                    {institution.name}
+                  </div>
+                )}
+              </div>
+
+              {/* Título Principal */}
+              <h3 style={{ 
+                fontSize: '19px', 
+                fontWeight: '700', 
+                color: '#0f172a', 
+                margin: '0 0 25px 0',
+                lineHeight: '1.3',
+                fontFamily: 'system-ui, -apple-system, sans-serif'
+              }}>
+                Escanear para consultar un equipo
+              </h3>
+
+              {/* Código QR */}
+              <div style={{
+                padding: '12px',
+                background: '#fff',
+                borderRadius: '8px',
+                border: '1.5px solid #f1f5f9',
+                display: 'inline-block',
+                marginBottom: '25px'
+              }}>
+                <QRCodeSVG
+                  id="universal-qr-svg"
+                  value={universalQRUrl}
+                  size={240}
+                  level="H"
+                  includeMargin={false}
                 />
               </div>
-            )}
-            <div style={{
-              background: '#fff',
-              padding: '1.5rem',
-              borderRadius: '8px',
-              boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.06)',
-              border: '2px solid #e5e7eb'
-            }}>
-              <QRCodeSVG
-                id="universal-qr-svg"
-                value={universalQRUrl}
-                size={300}
-                level="H"
-                includeMargin={true}
-              />
+
+              {/* Subtítulo / Pie de página */}
+              <div style={{ borderTop: '1px solid #f1f5f9', width: '100%', paddingTop: '20px' }}>
+                <p style={{ 
+                  fontSize: '13px', 
+                  color: '#64748b', 
+                  fontWeight: '500', 
+                  margin: 0,
+                  letterSpacing: '0.01em',
+                  fontFamily: 'system-ui, -apple-system, sans-serif'
+                }}>
+                  Equipo registrado en <strong style={{ color: '#1e293b' }}>Lortech</strong>
+                </p>
+              </div>
             </div>
+            
             <p style={{
-              fontSize: '0.85rem',
-              color: '#6b7280',
-              marginTop: '1rem',
-              fontFamily: 'monospace',
-              wordBreak: 'break-all',
-              textAlign: 'center',
-              maxWidth: '500px'
+              fontSize: '0.8rem',
+              color: '#94a3b8',
+              marginTop: '1.5rem',
+              fontFamily: 'monospace'
             }}>
-              {universalQRUrl}
+              URL destino: {universalQRUrl}
             </p>
           </div>
 
@@ -240,38 +267,44 @@ function QRUniversalManager() {
             <button
               onClick={handleDownloadQR}
               style={{
-                padding: '0.75rem 1.5rem',
-                background: '#3b82f6',
+                padding: '0.75rem 1.75rem',
+                background: '#1e293b',
                 color: '#fff',
                 borderRadius: '8px',
-                fontWeight: '500',
+                fontWeight: '600',
                 border: 'none',
                 cursor: 'pointer',
-                boxShadow: '0 2px 8px rgba(59,130,246,0.3)',
-                transition: 'all 0.2s'
+                boxShadow: '0 4px 12px rgba(30,41,59,0.25)',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
               }}
-              onMouseOver={(e) => e.currentTarget.style.background = '#2563eb'}
-              onMouseOut={(e) => e.currentTarget.style.background = '#3b82f6'}
+              onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+              onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
-              📥 Descargar QR
+              <span style={{ fontSize: '1.2rem' }}>📥</span> Descargar Etiqueta (PNG)
             </button>
             <button
-              onClick={handlePrintQR}
+              onClick={handleDownloadPDF}
               style={{
-                padding: '0.75rem 1.5rem',
-                background: '#10b981',
+                padding: '0.75rem 1.75rem',
+                background: '#059669',
                 color: '#fff',
                 borderRadius: '8px',
-                fontWeight: '500',
+                fontWeight: '600',
                 border: 'none',
                 cursor: 'pointer',
-                boxShadow: '0 2px 8px rgba(16,185,129,0.3)',
-                transition: 'all 0.2s'
+                boxShadow: '0 4px 12px rgba(5,150,105,0.25)',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
               }}
-              onMouseOver={(e) => e.currentTarget.style.background = '#059669'}
-              onMouseOut={(e) => e.currentTarget.style.background = '#10b981'}
+              onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+              onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
-              🖨️ Imprimir
+              <span style={{ fontSize: '1.2rem' }}>📄</span> Descargar Etiqueta (PDF)
             </button>
             <button
               onClick={() => window.open(universalQRUrl, '_blank')}
@@ -351,20 +384,36 @@ function QRUniversalManager() {
           </div>
         </div>
 
-        {/* Estilos de impresión */}
+        {/* Estilos de impresión optimizados para PDF */}
         <style jsx global>{`
           @media print {
-            body * {
-              visibility: hidden;
+            body {
+              background: white !important;
+              padding: 0 !important;
+              margin: 0 !important;
             }
-            .print-section, .print-section * {
-              visibility: visible;
+            body > * {
+              display: none !important;
+            }
+            #qr-label-professional {
+              display: flex !important;
+              position: absolute !important;
+              left: 50% !important;
+              top: 50% !important;
+              transform: translate(-50%, -50%) !important;
+              box-shadow: none !important;
+              border: 1px solid #eee !important;
             }
             .print-section {
-              position: absolute;
-              left: 50%;
-              top: 50%;
-              transform: translate(-50%, -50%);
+              display: flex !important;
+              visibility: visible !important;
+            }
+            .print-section * {
+              visibility: visible !important;
+            }
+            @page {
+              size: auto;
+              margin: 0mm;
             }
           }
         `}</style>
