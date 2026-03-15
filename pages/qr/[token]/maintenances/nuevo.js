@@ -21,8 +21,19 @@ export default function NuevaMantencion() {
   const photosRef = useRef();
   const docsRef = useRef();
 
+  const [currentDateTime, setCurrentDateTime] = useState('');
+
   // Validar token y cargar equipo
   useEffect(() => {
+    // Definir fecha y hora actual como límite (max)
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    setCurrentDateTime(`${year}-${month}-${day}T${hours}:${minutes}`);
+
     if (!token) return;
     setValidando(true);
     setError(null);
@@ -253,13 +264,14 @@ export default function NuevaMantencion() {
               placeholder="Describe la mantención realizada"
             />
           </label>
-          <label className="text-sm font-semibold">Fecha de realización:
+          <label className="text-sm font-semibold">Fecha y hora de realización:
             <input
-              type="date"
+              type="datetime-local"
               name="performedAt"
               className="border rounded px-2 py-1 text-sm w-full mt-1"
               value={form.performedAt}
               onChange={handleChange}
+              max={currentDateTime}
               required
             />
           </label>
