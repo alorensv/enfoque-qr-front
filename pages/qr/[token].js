@@ -1,8 +1,10 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
+import { useAuth } from '/contexts/AuthContext';
 
 export default function QrPage() {
+  const { user } = useAuth();
   const router = useRouter();
   const { token } = router.query;
   const [qr, setQr] = useState(null);
@@ -137,6 +139,29 @@ export default function QrPage() {
       setSaving(false);
       setSaveMsg('Cambios guardados correctamente');
     }, 1200);
+  };
+
+  // Marcar mantención como inactiva (soft delete)
+  const marcarMantencionInactiva = async (mantId) => {
+    if (!window.confirm('¿Seguro que deseas eliminar esta mantención?')) return;
+    setSaving(true);
+    setSaveMsg(null);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/maintenances/${mantId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (res.ok) {
+        setMantenciones(prev => prev.filter(m => m.id !== mantId));
+        setSaveMsg('Mantención eliminada');
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setSaveMsg(err.message || 'Error al eliminar mantención');
+      }
+    } catch {
+      setSaveMsg('Error al eliminar mantención');
+    }
+    setSaving(false);
   };
 
 
@@ -301,12 +326,24 @@ export default function QrPage() {
                       Resp: {mant.user?.userProfile?.fullName || mant.technician || 'No asignado'}
                     </p>
                   </div>
-                  <button
-                    className="text-blue-600 hover:underline font-medium"
-                    onClick={() => router.push(`/qr/${token}/maintenances/detail?id=${mant.id}`)}
-                  >
-                    Ver Detalles
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      className="text-blue-600 hover:underline font-medium"
+                      onClick={() => router.push(`/qr/${token}/maintenances/detail?id=${mant.id}`)}
+                    >
+                      Ver Detalles
+                    </button>
+                    {puedeVerPrivados && user && (user.role === 'super' || user.role === 'admin' || user.userId === mant.userId) && (
+                      <button
+                        title="Eliminar mantención"
+                        className="text-red-500 hover:text-red-700 font-bold"
+                        onClick={() => marcarMantencionInactiva(mant.id)}
+                        disabled={saving}
+                      >
+                        Eliminar
+                      </button>
+                    )}
+                  </div>
                 </li>
               ))
             )}
