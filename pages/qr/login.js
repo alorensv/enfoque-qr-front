@@ -34,13 +34,13 @@ export default function QrLogin() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 py-4 px-2">
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 flex flex-col gap-4">
-        <h1 className="text-xl font-bold text-gray-900 mb-2 text-center">Iniciar sesión institución</h1>
-        <form onSubmit={handleLogin} className="flex flex-col gap-3">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-100 to-teal-50 font-sans p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 sm:p-10 flex flex-col gap-4 text-center">
+        <h1 className="text-2xl font-bold text-blue-600 mb-2">Iniciar sesión institución</h1>
+        <form onSubmit={handleLogin} className="flex flex-col gap-5">
           <input
             type="text"
-            className="border rounded px-3 py-2 text-sm"
+            className="w-full px-4 py-3 rounded-lg border border-slate-300 text-base outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
             placeholder="Usuario"
             value={username}
             onChange={e => setUsername(e.target.value)}
@@ -49,7 +49,7 @@ export default function QrLogin() {
           />
           <input
             type="password"
-            className="border rounded px-3 py-2 text-sm"
+            className="w-full px-4 py-3 rounded-lg border border-slate-300 text-base outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
             placeholder="Clave"
             value={password}
             onChange={e => setPassword(e.target.value)}
@@ -57,13 +57,13 @@ export default function QrLogin() {
           />
           <button
             type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
+            className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg font-semibold text-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-75 disabled:cursor-not-allowed transition-colors"
             disabled={loading}
           >
             {loading ? 'Validando...' : 'Ingresar'}
           </button>
         </form>
-        {error && <div className="text-red-500 text-sm text-center">{error}</div>}
+        {error && <div className="text-red-600 text-sm text-center mt-1">{error}</div>}
       </div>
     </div>
   );
