@@ -13,6 +13,8 @@ export default function EquipmentForm({
   showPhotoUpload = false,
   showInstitution = false,
   institutions = [],
+  showClient = true,
+  clients = [],
   error = null
 }) {
   const [formData, setFormData] = useState({
@@ -21,6 +23,7 @@ export default function EquipmentForm({
     description: initialData.description || '',
     status: initialData.status || '',
     institutionId: initialData.institutionId || '',
+    clientId: initialData.clientId || '',
     ...initialData
   });
   const [equipmentPhoto, setEquipmentPhoto] = useState(null);
@@ -51,6 +54,10 @@ export default function EquipmentForm({
     // Solo incluir institutionId si showInstitution está habilitado
     if (showInstitution && formData.institutionId) {
       dataToSend.institutionId = formData.institutionId;
+    }
+
+    if (showClient && formData.clientId) {
+      dataToSend.clientId = formData.clientId;
     }
     
     onSubmit({ formData: dataToSend, equipmentPhoto });
@@ -119,8 +126,32 @@ export default function EquipmentForm({
           </div>
         )}
 
+        {/* Cliente (solo si showClient está habilitado) */}
+        {showClient && (
+          <div>
+            <label htmlFor="clientId" className="block text-sm font-semibold text-gray-700 mb-1">
+              Cliente
+            </label>
+            <select
+              id="clientId"
+              name="clientId"
+              value={formData.clientId}
+              onChange={handleChange}
+              disabled={loading}
+              className={`w-full px-4 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-200 focus:outline-none transition border-gray-200`}
+            >
+              <option value="">Sin Cliente Asignado</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {/* Estado */}
-        <div className={showInstitution ? '' : 'md:col-span-2'}>
+        <div className={(showInstitution || showClient) ? '' : 'md:col-span-2'}>
           <label htmlFor="status" className="block text-sm font-semibold text-gray-700 mb-1">
             Estado <span className="text-red-500">*</span>
           </label>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
@@ -8,8 +8,18 @@ import EquipmentForm from '../../../components/EquipmentForm';
 export default function NuevoEquipo() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [clients, setClients] = useState([]);
   const router = useRouter();
   const { user } = useAuth();
+
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/clients`, {
+      credentials: 'include',
+    })
+      .then(res => res.json())
+      .then(data => setClients(data))
+      .catch(() => {});
+  }, []);
 
   const handleSubmit = async ({ formData, equipmentPhoto }) => {
     setError(null);
@@ -32,6 +42,9 @@ export default function NuevoEquipo() {
       data.append('institutionId', institutionId);
       if (equipmentPhoto) {
         data.append('equipmentPhoto', equipmentPhoto);
+      }
+      if (formData.clientId) {
+        data.append('clientId', formData.clientId);
       }
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/equipments`, {
         method: 'POST',
@@ -65,6 +78,8 @@ export default function NuevoEquipo() {
           submitLabel="Guardar equipo"
           loading={submitting}
           showPhotoUpload={true}
+          showClient={true}
+          clients={clients}
           error={error}
         />
       </div>

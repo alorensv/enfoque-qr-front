@@ -197,60 +197,113 @@ export default function EquiposPage() {
               </Link>
             </div>
           ) : (
-            <div className="w-full">
-              <table className="min-w-full divide-y divide-gray-200 table-auto">
+            <div className="w-full overflow-hidden">
+              <table className="w-full table-fixed divide-y divide-gray-200">
+                <colgroup>
+                  <col style={{ width: '26%' }} />
+                  <col style={{ width: '24%' }} />
+                  <col style={{ width: '20%' }} />
+                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '9%' }} />
+                  <col style={{ width: '6%' }} />
+                  <col style={{ width: '5%' }} />
+                </colgroup>
                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0 z-10">
                   <tr>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Nombre</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Serie</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Estado</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">QR</th>
-                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Escaneos</th>
-                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Acciones</th>
+                    <th className="px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Nombre</th>
+                    <th className="px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Cliente</th>
+                    <th className="px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Serie</th>
+                    <th className="px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Estado</th>
+                    <th className="px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">QR</th>
+                    <th className="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Scans</th>
+                    <th className="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider"></th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
                   {equipos.map(equipo => (
                     <tr key={equipo.id} className="hover:bg-blue-50/40 transition group">
-                      <td className="px-6 py-4 whitespace-nowrap font-semibold text-gray-900 group-hover:text-blue-700 transition">{equipo.name}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-gray-600">{equipo.serialNumber || <span className="text-gray-300">-</span>}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${equipo.status === 'activo' ? 'bg-green-100 text-green-700' : equipo.status === 'inactivo' ? 'bg-gray-200 text-gray-500' : 'bg-yellow-100 text-yellow-700'}`}>{equipo.status || 'Sin estado'}</span>
+
+                      {/* NOMBRE — trunca si es muy largo, tooltip al pasar el mouse */}
+                      <td className="px-3 py-3 max-w-0">
+                        <p
+                          className="truncate font-semibold text-sm text-gray-900 group-hover:text-blue-700 transition"
+                          title={equipo.name}
+                        >
+                          {equipo.name}
+                        </p>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+
+                      {/* CLIENTE — trunca, tooltip con nombre completo */}
+                      <td className="px-3 py-3 max-w-0">
+                        {equipo.client?.name ? (
+                          <p
+                            className="truncate text-sm text-gray-600 font-medium"
+                            title={equipo.client.name}
+                          >
+                            {equipo.client.name}
+                          </p>
+                        ) : (
+                          <span className="text-gray-400 text-xs">No asignado</span>
+                        )}
+                      </td>
+
+                      {/* SERIE — trunca */}
+                      <td className="px-3 py-3 max-w-0">
+                        <p className="truncate text-sm text-gray-600" title={equipo.serialNumber}>
+                          {equipo.serialNumber || <span className="text-gray-300">—</span>}
+                        </p>
+                      </td>
+
+                      {/* ESTADO */}
+                      <td className="px-3 py-3 whitespace-nowrap">
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold ${
+                          equipo.status === 'activo'
+                            ? 'bg-green-100 text-green-700'
+                            : equipo.status === 'inactivo'
+                              ? 'bg-gray-200 text-gray-500'
+                              : 'bg-yellow-100 text-yellow-700'
+                        }`}>
+                          {equipo.status || '—'}
+                        </span>
+                      </td>
+
+                      {/* QR + docs */}
+                      <td className="px-3 py-3 whitespace-nowrap">
                         {Array.isArray(qrMap[equipo.id]) && qrMap[equipo.id].length > 0 ? (
                           <div className="flex flex-col gap-1">
                             {qrMap[equipo.id].map((qr, idx) => (
-                              <div key={qr.token || idx} className="flex items-center gap-2">
-                                <span className="text-gray-400 text-xs">{qr.estado}</span>
-                                {/* Link a detalle QR y contador de docs */}
+                              <div key={qr.token || idx} className="flex items-center gap-1">
                                 <Link href={`/qr/${qr.token}`} title="Ver detalle y documentos">
-                                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 text-xs font-bold">
-                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 12H9m6 0a6 6 0 11-12 0 6 6 0 0112 0z" /></svg>
-                                    {docMap[equipo.id] || 0} Docs
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 text-xs font-bold">
+                                    <svg className="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 12H9m6 0a6 6 0 11-12 0 6 6 0 0112 0z" /></svg>
+                                    {docMap[equipo.id] || 0}
                                   </span>
                                 </Link>
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <span className="text-gray-300 text-xs">Sin QR</span>
+                          <span className="text-gray-300 text-xs">—</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
+
+                      {/* ESCANEOS */}
+                      <td className="px-3 py-3 whitespace-nowrap text-center">
                         <button
                           onClick={() => handleOpenScanDetail(equipo.id, equipo.name)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 hover:bg-amber-100 text-sm font-bold transition cursor-pointer"
+                          className="inline-flex items-center gap-0.5 px-2 py-1 rounded-full bg-amber-50 text-amber-700 hover:bg-amber-100 text-xs font-bold transition cursor-pointer"
                           title="Ver detalle de escaneos"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
                           {scanMap[equipo.id] || 0}
                         </button>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
+
+                      {/* ACCIONES */}
+                      <td className="px-3 py-3 whitespace-nowrap text-center">
                         <EquipmentActionsDropdown
                           equipo={equipo}
                           deletingId={deletingId}
@@ -355,7 +408,9 @@ export default function EquiposPage() {
 // Dropdown de acciones para cada equipo (fuera del componente principal)
 function EquipmentActionsDropdown({ equipo, deletingId, handleDelete, qrs, isOpen, setIsOpen, institutionLogo }) {
   const dropdownRef = useRef(null);
+  const buttonRef = useRef(null);
   const etiquetaRef = useRef(null);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
   const [isUp, setIsUp] = useState(false);
 
   const handleDownloadEtiqueta = async () => {
@@ -374,34 +429,53 @@ function EquipmentActionsDropdown({ equipo, deletingId, handleDelete, qrs, isOpe
     setIsOpen(null);
   };
 
-  const handleToggle = () => {
+  const handleToggle = (e) => {
     if (!isOpen) {
-      const rect = dropdownRef.current.getBoundingClientRect();
+      const rect = e.currentTarget.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom;
-      // Si no hay espacio abajo (aprox. 150px para el menú), ábrelo hacia arriba
-      setIsUp(spaceBelow < 150);
+      const isUpNow = spaceBelow < 250; // Aumentado para asegurar espacio para el menú de ~220px
+      setIsUp(isUpNow);
+      
+      // Calculamos la posición fija
+      setCoords({
+        top: isUpNow ? rect.top : rect.bottom,
+        left: rect.right - 224, // 224px es el ancho del dropdown (w-56 = 14rem = 224px)
+      });
     }
     setIsOpen(isOpen ? null : equipo.id);
   };
 
-  // Cerrar el menú al hacer click fuera
+  // Cerrar el menú al hacer click fuera, scroll o resize
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+    function handleEvent(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target) && 
+          buttonRef.current && !buttonRef.current.contains(event.target)) {
         setIsOpen(null);
       }
     }
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+    
+    function handleScrollResize() {
+      if (isOpen) setIsOpen(null);
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleEvent);
+      window.addEventListener('scroll', handleScrollResize, true);
+      window.addEventListener('resize', handleScrollResize);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleEvent);
+      window.removeEventListener('scroll', handleScrollResize, true);
+      window.removeEventListener('resize', handleScrollResize);
+    };
   }, [isOpen, setIsOpen]);
 
   return (
-    <div className="relative inline-block text-left" ref={dropdownRef}>
+    <div className="relative inline-block text-left">
       <button
+        ref={buttonRef}
         type="button"
-        className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300"
+        className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-colors"
         aria-haspopup="true"
         aria-expanded={isOpen}
         onClick={handleToggle}
@@ -412,11 +486,21 @@ function EquipmentActionsDropdown({ equipo, deletingId, handleDelete, qrs, isOpe
         </svg>
       </button>
       {isOpen && (
-        <div className={`origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20 ${isUp ? 'bottom-full mb-2' : 'top-full'}`}>
+        <div 
+          ref={dropdownRef}
+          style={{
+            position: 'fixed',
+            top: isUp ? 'auto' : coords.top + 8,
+            bottom: isUp ? (window.innerHeight - coords.top) + 8 : 'auto',
+            left: coords.left,
+            zIndex: 9999,
+          }}
+          className="w-56 rounded-md shadow-xl bg-white ring-1 ring-black ring-opacity-5 animate-in fade-in zoom-in duration-100"
+        >
           <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
             <button
               onClick={handleDownloadEtiqueta}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-semibold w-full"
+              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-semibold w-full text-left"
               title="Descargar Etiqueta"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -454,7 +538,7 @@ function EquipmentActionsDropdown({ equipo, deletingId, handleDelete, qrs, isOpe
               Editar
             </Link>
             <button
-              className={`flex items-center gap-2 px-4 py-2 text-sm text-red-700 hover:bg-red-50 font-semibold w-full ${deletingId === equipo.id ? 'opacity-50 pointer-events-none' : ''}`}
+              className={`flex items-center gap-2 px-4 py-2 text-sm text-red-700 hover:bg-red-50 font-semibold w-full text-left ${deletingId === equipo.id ? 'opacity-50 pointer-events-none' : ''}`}
               onClick={() => { setIsOpen(null); handleDelete(equipo.id); }}
               disabled={deletingId === equipo.id}
               aria-label="Eliminar equipo"

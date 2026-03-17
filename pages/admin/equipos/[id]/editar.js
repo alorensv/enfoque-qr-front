@@ -10,6 +10,14 @@ export default function EditarEquipo() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [clients, setClients] = useState([]);
+
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/clients`, { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => setClients(data))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -23,6 +31,7 @@ export default function EditarEquipo() {
           serialNumber: data.serialNumber || '',
           description: data.description || '',
           status: data.status || '',
+          clientId: data.client?.id || data.clientId || '',
         });
         setLoading(false);
       })
@@ -75,6 +84,8 @@ export default function EditarEquipo() {
             submitLabel="Guardar cambios"
             loading={saving}
             showPhotoUpload={false}
+            showClient={true}
+            clients={clients}
             error={error}
           />
         )}

@@ -14,6 +14,7 @@ export default function EnrollEquipment() {
   const [institutions, setInstitutions] = useState([]);
   const [availableQRs, setAvailableQRs] = useState([]);
   const [loadingQRs, setLoadingQRs] = useState(false);
+  const [clients, setClients] = useState([]);
   const [showQRList, setShowQRList] = useState(false);
   const [searchQR, setSearchQR] = useState('');
   const [error, setError] = useState(null);
@@ -21,6 +22,10 @@ export default function EnrollEquipment() {
   useEffect(() => {
     fetchInstitutions();
     fetchAvailableQRs();
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/clients`, { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => setClients(data))
+      .catch(() => {});
     // Si viene un token en la URL, pre-llenarlo
     if (token) {
       setQrToken(token);
@@ -141,6 +146,10 @@ export default function EnrollEquipment() {
       data.append('status', formData.status);
       data.append('description', formData.description || '');
       data.append('institutionId', formData.institutionId);
+
+      if (formData.clientId) {
+        data.append('clientId', formData.clientId);
+      }
       
       if (equipmentPhoto) {
         data.append('equipmentPhoto', equipmentPhoto);
@@ -319,6 +328,8 @@ export default function EnrollEquipment() {
               showPhotoUpload={true}
               showInstitution={true}
               institutions={institutions}
+              showClient={true}
+              clients={clients}
               error={error}
             />
           </div>
