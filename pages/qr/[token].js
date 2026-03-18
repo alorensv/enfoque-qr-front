@@ -24,15 +24,17 @@ export default function QrPage() {
 
   // Check login status on mount
   useEffect(() => {
-    const session = Cookies.get('institucion_session');
+    const session = Cookies.get('institucion_session') || Cookies.get('token');
     if (session) {
       setIsLoggedIn(true);
-      setPuedeVerPrivados(true);
     } else {
       setIsLoggedIn(false);
-      setPuedeVerPrivados(false);
     }
   }, []);
+
+  const esInstitucionPropia = user && equipo && Number(user.institutionId) === Number(equipo.institutionId);
+  // Solo puede ver privados si es de la propia institución
+  const canSeePrivate = isLoggedIn && esInstitucionPropia;
 
   // Controlar si mostrar el login embebido
   const [showLogin, setShowLogin] = useState(false);
@@ -64,7 +66,7 @@ export default function QrPage() {
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/qr/${token}/scan`, {
           method: 'POST',
           credentials: 'include',
-        }).catch(() => {});
+        }).catch(() => { });
         if (equipoData && equipoData.id) {
           equipoId = equipoData.id;
           // Obtener documentos reales
@@ -172,13 +174,13 @@ export default function QrPage() {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center py-8 px-4">
       <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg overflow-hidden">
-        
+
         {/* Banner Superior con Logo y Botón Cotizar */}
         <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 px-4 sm:px-6 py-4 flex items-center justify-between shadow-md">
           <div className="flex items-center">
-            <img 
-              src="/logo_lortech_blanco.png" 
-              alt="Lortech" 
+            <img
+              src="/logo_lortech_blanco.png"
+              alt="Lortech"
               className="h-10 sm:h-12 md:h-14 w-auto object-contain"
             />
           </div>
@@ -196,159 +198,158 @@ export default function QrPage() {
         <div className="p-6 space-y-6">
           {/* Header */}
           <div className="flex items-start justify-between gap-4">
-          <div className="flex-grow">
-            <h1 className="text-2xl font-bold text-gray-800">{equipo?.name || 'Equipo sin nombre'}</h1>
-            <p className="text-sm text-gray-500">{equipo?.description}</p>
-            <span className={`mt-2 inline-block px-3 py-1 text-xs font-semibold rounded-full ${
-              equipo?.status === 'activo' ? 'bg-green-100 text-green-800' : 
-              equipo?.status === 'inactivo' ? 'bg-gray-200 text-gray-600' : 
-              'bg-yellow-100 text-yellow-800'
-            }`}>{equipo?.status || 'sin estado'}</span>
+            <div className="flex-grow">
+              <h1 className="text-2xl font-bold text-gray-800">{equipo?.name || 'Equipo sin nombre'}</h1>
+              <p className="text-sm text-gray-500">{equipo?.description}</p>
+              <span className={`mt-2 inline-block px-3 py-1 text-xs font-semibold rounded-full ${equipo?.status === 'activo' ? 'bg-green-100 text-green-800' :
+                  equipo?.status === 'inactivo' ? 'bg-gray-200 text-gray-600' :
+                    'bg-yellow-100 text-yellow-800'
+                }`}>{equipo?.status || 'sin estado'}</span>
+            </div>
+            {equipo?.equipmentPhoto && (
+              <img
+                src={`${process.env.NEXT_PUBLIC_API_URL}/equipments/${equipo.id}/photo`}
+                alt="Foto del equipo"
+                className="w-24 h-24 object-cover rounded-lg border-2 border-gray-200"
+              />
+            )}
           </div>
-          {equipo?.equipmentPhoto && (
-            <img 
-              src={`${process.env.NEXT_PUBLIC_API_URL}/equipments/${equipo.id}/photo`} 
-              alt="Foto del equipo" 
-              className="w-24 h-24 object-cover rounded-lg border-2 border-gray-200" 
-            />
+
+          {/* Última Mantención */}
+          {lastMaintenance && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h2 className="text-lg font-bold text-blue-900 mb-2">Última Mantención</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <p className="font-semibold text-gray-600">Fecha</p>
+                  <p className="text-gray-800">{new Date(lastMaintenance.performedAt).toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-600">Estado</p>
+                  <p className="text-gray-800">{lastMaintenance.status}</p>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-600">Responsable</p>
+                  <p className="text-gray-800">{lastMaintenance.user?.userProfile?.fullName || lastMaintenance.technician || 'No asignado'}</p>
+                </div>
+              </div>
+            </div>
           )}
-        </div>
 
-        {/* Última Mantención */}
-        {lastMaintenance && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h2 className="text-lg font-bold text-blue-900 mb-2">Última Mantención</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div>
-                <p className="font-semibold text-gray-600">Fecha</p>
-                <p className="text-gray-800">{new Date(lastMaintenance.performedAt).toLocaleDateString()}</p>
+          {/* Detalles del Equipo */}
+          <div className="border-t pt-6">
+            <h2 className="text-lg font-bold text-gray-800 mb-3">Detalles del Equipo</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className="flex items-center gap-3">
+                <span className="text-gray-500">N/S:</span>
+                <span className="font-mono bg-gray-100 px-2 py-1 rounded text-gray-800">{equipo?.serialNumber || '-'}</span>
               </div>
-              <div>
-                <p className="font-semibold text-gray-600">Estado</p>
-                <p className="text-gray-800">{lastMaintenance.status}</p>
-              </div>
-              <div>
-                <p className="font-semibold text-gray-600">Responsable</p>
-                <p className="text-gray-800">{lastMaintenance.user?.userProfile?.fullName || lastMaintenance.technician || 'No asignado'}</p>
+              <div className="flex items-center gap-3">
+                <span className="text-gray-500">Creado:</span>
+                <span className="text-gray-800">{equipo?.createdAt ? new Date(equipo.createdAt).toLocaleDateString() : '-'}</span>
               </div>
             </div>
           </div>
-        )}
 
-        {/* Detalles del Equipo */}
-        <div className="border-t pt-6">
-          <h2 className="text-lg font-bold text-gray-800 mb-3">Detalles del Equipo</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div className="flex items-center gap-3">
-              <span className="text-gray-500">N/S:</span>
-              <span className="font-mono bg-gray-100 px-2 py-1 rounded text-gray-800">{equipo?.serialNumber || '-'}</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-gray-500">Creado:</span>
-              <span className="text-gray-800">{equipo?.createdAt ? new Date(equipo.createdAt).toLocaleDateString() : '-'}</span>
-            </div>
+          {/* Documentación */}
+          <div className="border-t pt-6">
+            <h2 className="text-lg font-bold text-gray-800 mb-3">Documentación</h2>
+            <ul className="space-y-2">
+              {documentos.filter(doc => canSeePrivate || !doc.isPrivate).length === 0 ? (
+                <li className="text-gray-500 text-sm italic">No hay documentos disponibles.</li>
+              ) : (
+                documentos
+                  .filter(doc => canSeePrivate || !doc.isPrivate)
+                  .map(doc => (
+                    <li key={doc.id} className="bg-gray-50 rounded-lg p-3 flex items-center justify-between gap-4 transition hover:bg-gray-100">
+                      <div className="flex-grow">
+                        <p className="font-semibold text-gray-900">
+                          {doc.name}
+                          {!!doc.isPrivate && <span className="ml-2 text-xs font-bold text-red-600">(Privado)</span>}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : ''}
+                          {doc.responsable ? ` · ${doc.responsable}` : ''}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {doc.filePath && (
+                          <a
+                            href={`${process.env.NEXT_PUBLIC_API_URL}/equipments/documents/${doc.id}/download`}
+                            className="text-blue-600 hover:underline text-sm font-medium"
+                          >
+                            Descargar
+                          </a>
+                        )}
+                        {canSeePrivate && (
+                          <button
+                            title="Marcar como inactivo"
+                            className="text-red-500 hover:text-red-700 text-xl font-bold"
+                            onClick={() => marcarDocumentoInactivo(doc.id)}
+                            disabled={saving}
+                            aria-label="Marcar como inactivo"
+                          >
+                            &times;
+                          </button>
+                        )}
+                      </div>
+                    </li>
+                  ))
+              )}
+            </ul>
           </div>
-        </div>
 
-        {/* Documentación */}
-        <div className="border-t pt-6">
-          <h2 className="text-lg font-bold text-gray-800 mb-3">Documentación</h2>
-          <ul className="space-y-2">
-            {documentos.filter(doc => puedeVerPrivados || !doc.isPrivate).length === 0 ? (
-              <li className="text-gray-500 text-sm italic">No hay documentos disponibles.</li>
-            ) : (
-              documentos
-                .filter(doc => puedeVerPrivados || !doc.isPrivate)
-                .map(doc => (
-                  <li key={doc.id} className="bg-gray-50 rounded-lg p-3 flex items-center justify-between gap-4 transition hover:bg-gray-100">
-                    <div className="flex-grow">
-                      <p className="font-semibold text-gray-900">
-                        {doc.name}
-                        {!!doc.isPrivate && <span className="ml-2 text-xs font-bold text-red-600">(Privado)</span>}
+          {/* Mantenciones */}
+          <div className="border-t pt-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-bold text-gray-800">Historial de Mantenciones</h2>
+              {canSeePrivate && (
+                <button
+                  className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-4 py-2 text-sm shadow-sm transition flex items-center gap-2"
+                  onClick={() => router.push(`/qr/${token}/maintenances/nuevo`)}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                  Nueva
+                </button>
+              )}
+            </div>
+            <ul className="space-y-2">
+              {mantenciones.length === 0 ? (
+                <li className="text-gray-500 text-sm italic">No hay mantenciones registradas.</li>
+              ) : (
+                mantenciones.map(mant => (
+                  <li key={mant.id} className="bg-gray-50 rounded-lg p-3 flex items-center justify-between gap-4 text-sm">
+                    <div>
+                      <p className="font-semibold text-gray-800">
+                        {new Date(mant.performedAt).toLocaleDateString()} - <span className="font-normal">{mant.status}</span>
                       </p>
-                      <p className="text-xs text-gray-500">
-                        {doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : ''}
-                        {doc.responsable ? ` · ${doc.responsable}` : ''}
+                      <p className="text-xs text-gray-600">
+                        Resp: {mant.user?.userProfile?.fullName || mant.technician || 'No asignado'}
                       </p>
                     </div>
-                    <div className="flex items-center gap-3">
-                      {doc.filePath && (
-                        <a
-                          href={`${process.env.NEXT_PUBLIC_API_URL}/equipments/documents/${doc.id}/download`}
-                          className="text-blue-600 hover:underline text-sm font-medium"
-                        >
-                          Descargar
-                        </a>
-                      )}
-                      {puedeVerPrivados && (
+                    <div className="flex gap-2">
+                      <button
+                        className="text-blue-600 hover:underline font-medium"
+                        onClick={() => router.push(`/qr/${token}/maintenances/detail?id=${mant.id}`)}
+                      >
+                        Ver Detalles
+                      </button>
+                      {canSeePrivate && user && (user.role === 'super' || user.role === 'admin' || user.userId === mant.userId) && (
                         <button
-                          title="Marcar como inactivo"
-                          className="text-red-500 hover:text-red-700 text-xl font-bold"
-                          onClick={() => marcarDocumentoInactivo(doc.id)}
+                          title="Eliminar mantención"
+                          className="text-red-500 hover:text-red-700 font-bold"
+                          onClick={() => marcarMantencionInactiva(mant.id)}
                           disabled={saving}
-                          aria-label="Marcar como inactivo"
                         >
-                          &times;
+                          Eliminar
                         </button>
                       )}
                     </div>
                   </li>
                 ))
-            )}
-          </ul>
-        </div>
-
-        {/* Mantenciones */}
-        <div className="border-t pt-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-gray-800">Historial de Mantenciones</h2>
-            {puedeVerPrivados && (
-              <button
-                className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-4 py-2 text-sm shadow-sm transition flex items-center gap-2"
-                onClick={() => router.push(`/qr/${token}/maintenances/nuevo`)}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                Nueva
-              </button>
-            )}
+              )}
+            </ul>
           </div>
-          <ul className="space-y-2">
-            {mantenciones.length === 0 ? (
-              <li className="text-gray-500 text-sm italic">No hay mantenciones registradas.</li>
-            ) : (
-              mantenciones.map(mant => (
-                <li key={mant.id} className="bg-gray-50 rounded-lg p-3 flex items-center justify-between gap-4 text-sm">
-                  <div>
-                    <p className="font-semibold text-gray-800">
-                      {new Date(mant.performedAt).toLocaleDateString()} - <span className="font-normal">{mant.status}</span>
-                    </p>
-                    <p className="text-xs text-gray-600">
-                      Resp: {mant.user?.userProfile?.fullName || mant.technician || 'No asignado'}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      className="text-blue-600 hover:underline font-medium"
-                      onClick={() => router.push(`/qr/${token}/maintenances/detail?id=${mant.id}`)}
-                    >
-                      Ver Detalles
-                    </button>
-                    {puedeVerPrivados && user && (user.role === 'super' || user.role === 'admin' || user.userId === mant.userId) && (
-                      <button
-                        title="Eliminar mantención"
-                        className="text-red-500 hover:text-red-700 font-bold"
-                        onClick={() => marcarMantencionInactiva(mant.id)}
-                        disabled={saving}
-                      >
-                        Eliminar
-                      </button>
-                    )}
-                  </div>
-                </li>
-              ))
-            )}
-          </ul>
-        </div>
 
           {/* Footer y Acciones */}
           <div className="border-t pt-6 text-center">

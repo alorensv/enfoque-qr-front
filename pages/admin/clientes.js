@@ -1,8 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import Link from 'next/link';
+import { useAuth } from '../../contexts/AuthContext';
+import { useRouter } from 'next/router';
 
 export default function ClientesPage() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -10,6 +14,10 @@ export default function ClientesPage() {
   const [activeDropdown, setActiveDropdown] = useState(null);
 
   useEffect(() => {
+    if (!authLoading && user && user.role === 'institution_user') {
+      router.replace('/admin/home');
+      return;
+    }
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/clients`, {
       credentials: 'include',
     })

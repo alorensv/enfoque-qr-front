@@ -84,7 +84,10 @@ const sidebarBase = {
   zIndex: 50,
 };
 
+import { useAuth } from '../contexts/AuthContext';
+
 export default function AdminSidebar({ isOpen, closeSidebar }) {
+  const { user } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [hoveredItem, setHoveredItem] = useState(null);
   const router = useRouter();
@@ -93,6 +96,15 @@ export default function AdminSidebar({ isOpen, closeSidebar }) {
     router.pathname === href || router.pathname.startsWith(href + '/');
 
   const sidebarWidth = isCollapsed ? 68 : 240;
+
+  // Filtrar menú según rol
+  const filteredMenu = menu.filter(item => {
+    if (user?.role === 'institution_user') {
+      // Usuarios normales NO ven Usuarios ni Clientes
+      return !['Usuarios', 'Clientes'].includes(item.label);
+    }
+    return true;
+  });
 
   return (
     <>
@@ -132,7 +144,7 @@ export default function AdminSidebar({ isOpen, closeSidebar }) {
           setIsCollapsed={setIsCollapsed}
           hoveredItem={hoveredItem}
           setHoveredItem={setHoveredItem}
-          menu={menu}
+          menu={filteredMenu}
           isActive={isActive}
           icons={icons}
         />
@@ -157,7 +169,7 @@ export default function AdminSidebar({ isOpen, closeSidebar }) {
           setIsCollapsed={setIsCollapsed}
           hoveredItem={hoveredItem}
           setHoveredItem={setHoveredItem}
-          menu={menu}
+          menu={filteredMenu}
           isActive={isActive}
           icons={icons}
         />

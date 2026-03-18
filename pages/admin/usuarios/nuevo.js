@@ -192,7 +192,7 @@ export default function NuevoUsuario() {
                 >
                   <option value="institution_user">Usuario Institución</option>
                   <option value="admin">Administrador</option>
-                  <option value="super">Super Administrador</option>
+                  {user?.role === 'super' && <option value="super">Super Administrador</option>}
                 </select>
               </div>
             </div>

@@ -1,8 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import Link from 'next/link';
+import { useAuth } from '../../contexts/AuthContext';
+import { useRouter } from 'next/router';
 
 export default function UsuariosPage() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -10,6 +14,10 @@ export default function UsuariosPage() {
   const [activeDropdown, setActiveDropdown] = useState(null);
 
   useEffect(() => {
+    if (!authLoading && user && user.role === 'institution_user') {
+      router.replace('/admin/home');
+      return;
+    }
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/users`, {
       credentials: 'include',
     })
@@ -50,13 +58,15 @@ export default function UsuariosPage() {
       <div className="w-full py-4 px-2 md:px-8">
         <div className="mb-6">
           <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight mb-1">Usuarios</h1>
-          {/* Mini header de acciones */}
-          <div className="flex items-center gap-2 bg-blue-50/60 border border-blue-100 rounded-lg px-3 py-1.5 mb-1">
-            <Link href="/admin/usuarios/nuevo" className="inline-flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md shadow font-semibold text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-300" title="Nuevo usuario">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-              Nuevo usuario
-            </Link>
-          </div>
+          {/* Mini header de acciones - Solo para Admin/Super */}
+          {(user?.role === 'admin' || user?.role === 'super') && (
+            <div className="flex items-center gap-2 bg-blue-50/60 border border-blue-100 rounded-lg px-3 py-1.5 mb-1">
+              <Link href="/admin/usuarios/nuevo" className="inline-flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md shadow font-semibold text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-300" title="Nuevo usuario">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                Nuevo usuario
+              </Link>
+            </div>
+          )}
         </div>
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100">
           {loading ? (
@@ -122,6 +132,7 @@ export default function UsuariosPage() {
                           handleDelete={handleDelete}
                           isOpen={activeDropdown === usuario.id}
                           setIsOpen={setActiveDropdown}
+                          currentUserRole={user?.role}
                         />
                       </td>
                     </tr>
@@ -137,7 +148,7 @@ export default function UsuariosPage() {
 }
 
 // Dropdown de acciones para cada usuario (fuera del componente principal)
-function UserActionsDropdown({ usuario, deletingId, handleDelete, isOpen, setIsOpen }) {
+function UserActionsDropdown({ usuario, deletingId, handleDelete, isOpen, setIsOpen, currentUserRole }) {
   const dropdownRef = useRef(null);
   const [isUp, setIsUp] = useState(false);
 
@@ -181,25 +192,35 @@ function UserActionsDropdown({ usuario, deletingId, handleDelete, isOpen, setIsO
       {isOpen && (
         <div className={`origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20 ${isUp ? 'bottom-full mb-2' : 'top-full'}`}>
           <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-            <Link
-              href={`/admin/usuarios/${usuario.id}/editar`}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 font-semibold w-full"
-              title="Editar"
-              onClick={() => setIsOpen(null)}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13h3l8-8a2.828 2.828 0 10-4-4l-8 8v3z" /></svg>
-              Editar
-            </Link>
-            <button
-              className={`flex items-center gap-2 px-4 py-2 text-sm text-red-700 hover:bg-red-50 font-semibold w-full ${deletingId === usuario.id ? 'opacity-50 pointer-events-none' : ''}`}
-              onClick={() => { setIsOpen(null); handleDelete(usuario.id); }}
-              disabled={deletingId === usuario.id}
-              aria-label="Eliminar usuario"
-              title="Eliminar"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-              {deletingId === usuario.id ? 'Eliminando...' : 'Eliminar'}
-            </button>
+            {/* Solo permitir editar/eliminar si NO es super o si el actual es super */}
+            {(usuario.role !== 'super' || currentUserRole === 'super') && (
+              <>
+                <Link
+                  href={`/admin/usuarios/${usuario.id}/editar`}
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 font-semibold w-full"
+                  title="Editar"
+                  onClick={() => setIsOpen(null)}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13h3l8-8a2.828 2.828 0 10-4-4l-8 8v3z" /></svg>
+                  Editar
+                </Link>
+                <button
+                  className={`flex items-center gap-2 px-4 py-2 text-sm text-red-700 hover:bg-red-50 font-semibold w-full ${deletingId === usuario.id ? 'opacity-50 pointer-events-none' : ''}`}
+                  onClick={() => { setIsOpen(null); handleDelete(usuario.id); }}
+                  disabled={deletingId === usuario.id}
+                  aria-label="Eliminar usuario"
+                  title="Eliminar"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  {deletingId === usuario.id ? 'Eliminando...' : 'Eliminar'}
+                </button>
+              </>
+            )}
+            {usuario.role === 'super' && currentUserRole !== 'super' && (
+              <div className="px-4 py-2 text-xs text-gray-400 italic">
+                Sin permisos para gestionar Super Admin
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -96,45 +96,57 @@ export default function DocumentsPage() {
               </Link>
             </div>
           ) : (
-            <div className="w-full overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 table-auto">
+            <div className="w-full overflow-hidden">
+              <table className="w-full table-fixed divide-y divide-gray-200">
+                <colgroup>
+                  <col style={{ width: '35%' }} />
+                  <col style={{ width: '25%' }} />
+                  <col style={{ width: '15%' }} />
+                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '8%' }} />
+                  <col style={{ width: '5%' }} />
+                </colgroup>
                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0 z-10">
                   <tr>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Nombre</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Equipo</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Fecha Creación</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Autor</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Estado</th>
-                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Acciones</th>
+                    <th className="px-3 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Nombre</th>
+                    <th className="px-3 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Equipo</th>
+                    <th className="px-3 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Fecha Creación</th>
+                    <th className="px-3 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Autor</th>
+                    <th className="px-3 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Estado</th>
+                    <th className="px-3 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
                   {documents.map(doc => (
                     <tr key={doc.id} className="hover:bg-blue-50/40 transition group">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
+                      <td className="px-3 py-4 max-w-0">
+                        <div className="flex items-center gap-2 overflow-hidden">
                           <svg className="w-5 h-5 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
-                          <div>
-                            <div className="font-semibold text-gray-900 group-hover:text-blue-700 transition">{doc.name}</div>
-                            {doc.type && <div className="text-xs text-gray-400">{doc.type}</div>}
+                          <div className="overflow-hidden">
+                            <div className="font-semibold text-gray-900 group-hover:text-blue-700 transition truncate text-sm" title={doc.name}>{doc.name}</div>
+                            {doc.type && <div className="text-xs text-gray-400 truncate" title={doc.type}>{doc.type}</div>}
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Link href={`/admin/equipos/${doc.equipmentId}/editar`} className="text-indigo-600 hover:text-indigo-800 font-medium hover:underline">
+                      <td className="px-3 py-4 max-w-0">
+                        <Link href={`/admin/equipos/${doc.equipmentId}/editar`} className="text-indigo-600 hover:text-indigo-800 font-medium hover:underline block truncate text-sm" title={doc.equipmentName}>
                           {doc.equipmentName}
                         </Link>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-gray-600 text-sm">{formatDate(doc.createdAt)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-gray-600">{doc.responsable}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 py-4 whitespace-nowrap text-gray-600 text-sm">{formatDate(doc.createdAt)}</td>
+                      <td className="px-3 py-4 max-w-0">
+                        <p className="truncate text-gray-600 text-sm" title={doc.responsable}>
+                          {doc.responsable}
+                        </p>
+                      </td>
+                      <td className="px-3 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 rounded-full text-xs font-bold ${doc.isPrivate ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
                           {doc.isPrivate ? 'Privado' : 'Público'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <td className="px-3 py-4 whitespace-nowrap text-center">
                         <DocumentActionsDropdown
                           document={doc}
                           deletingId={deletingId}

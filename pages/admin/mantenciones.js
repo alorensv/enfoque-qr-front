@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import Link from 'next/link';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function MantencionesPage() {
+  const { user } = useAuth();
   const [mantenciones, setMantenciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -107,21 +109,28 @@ export default function MantencionesPage() {
               <p className="text-gray-400 mb-6">Las mantenciones se agregarán aquí.</p>
             </div>
           ) : (
-            <div className="w-full overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 table-auto">
+            <div className="w-full overflow-hidden">
+              <table className="w-full table-fixed divide-y divide-gray-200">
+                <colgroup>
+                  <col style={{ width: '18%' }} />
+                  <col style={{ width: '32%' }} />
+                  <col style={{ width: '25%' }} />
+                  <col style={{ width: '18%' }} />
+                  <col style={{ width: '7%' }} />
+                </colgroup>
                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0 z-10">
                   <tr>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Fecha</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Equipo</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Técnico/Responsable</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Estado</th>
-                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Acciones</th>
+                    <th className="px-3 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Fecha</th>
+                    <th className="px-3 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Equipo</th>
+                    <th className="px-3 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Técnico/Responsable</th>
+                    <th className="px-3 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Estado</th>
+                    <th className="px-3 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
                   {mantenciones.map(mant => (
                     <tr key={mant.id} className="hover:bg-blue-50/40 transition group">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <svg className="w-5 h-5 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -131,15 +140,17 @@ export default function MantencionesPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Link href={`/admin/equipos/${mant.equipmentId}/editar`} className="text-indigo-600 hover:text-indigo-800 font-medium hover:underline">
+                      <td className="px-3 py-4 max-w-0">
+                        <Link href={`/admin/equipos/${mant.equipmentId}/editar`} className="text-indigo-600 hover:text-indigo-800 font-medium hover:underline block truncate text-sm" title={mant.equipment?.name || 'Equipo desconocido'}>
                           {mant.equipment?.name || 'Equipo desconocido'}
                         </Link>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-gray-600 text-sm">
-                        {mant.user?.userProfile?.fullName || mant.technician || 'No asignado'}
+                      <td className="px-3 py-4 max-w-0">
+                        <p className="truncate text-gray-600 text-sm" title={mant.user?.userProfile?.fullName || mant.technician || 'No asignado'}>
+                          {mant.user?.userProfile?.fullName || mant.technician || 'No asignado'}
+                        </p>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 rounded-full text-xs font-bold ${mant.deletedAt ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
                           {mant.deletedAt ? 'Eliminada' : 'Activa'}
                         </span>
@@ -149,7 +160,7 @@ export default function MantencionesPage() {
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <td className="px-3 py-4 whitespace-nowrap text-center">
                         <MaintenanceActionsDropdown
                           maintenance={mant}
                           actionId={actionId}
@@ -157,6 +168,7 @@ export default function MantencionesPage() {
                           handleRestore={handleRestore}
                           isOpen={activeDropdown === mant.id}
                           setIsOpen={setActiveDropdown}
+                          currentUser={user}
                         />
                       </td>
                     </tr>
@@ -172,7 +184,7 @@ export default function MantencionesPage() {
 }
 
 // Dropdown de acciones para cada mantención
-function MaintenanceActionsDropdown({ maintenance: mant, actionId, handleDelete, handleRestore, isOpen, setIsOpen }) {
+function MaintenanceActionsDropdown({ maintenance: mant, actionId, handleDelete, handleRestore, isOpen, setIsOpen, currentUser }) {
   const dropdownRef = useRef(null);
   const [isUp, setIsUp] = useState(false);
 
@@ -239,27 +251,31 @@ function MaintenanceActionsDropdown({ maintenance: mant, actionId, handleDelete,
             </Link>
 
             {mant.deletedAt ? (
-              <button
-                className={`flex items-center gap-2 px-4 py-2 text-sm text-green-700 hover:bg-green-50 font-semibold w-full ${isRestoring ? 'opacity-50 pointer-events-none' : ''}`}
-                onClick={() => { setIsOpen(null); handleRestore(mant.id); }}
-                disabled={isRestoring || isDeleting}
-                aria-label="Restaurar mantención"
-                title="Restaurar"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                {isRestoring ? 'Restaurando...' : 'Restaurar'}
-              </button>
+              (currentUser?.role === 'admin' || currentUser?.role === 'super') && (
+                <button
+                  className={`flex items-center gap-2 px-4 py-2 text-sm text-green-700 hover:bg-green-50 font-semibold w-full ${isRestoring ? 'opacity-50 pointer-events-none' : ''}`}
+                  onClick={() => { setIsOpen(null); handleRestore(mant.id); }}
+                  disabled={isRestoring || isDeleting}
+                  aria-label="Restaurar mantención"
+                  title="Restaurar"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                  {isRestoring ? 'Restaurando...' : 'Restaurar'}
+                </button>
+              )
             ) : (
-              <button
-                className={`flex items-center gap-2 px-4 py-2 text-sm text-red-700 hover:bg-red-50 font-semibold w-full ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}
-                onClick={() => { setIsOpen(null); handleDelete(mant.id); }}
-                disabled={isDeleting || isRestoring}
-                aria-label="Eliminar mantención"
-                title="Eliminar"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                {isDeleting ? 'Eliminando...' : 'Eliminar'}
-              </button>
+              ((currentUser?.role === 'admin' || currentUser?.role === 'super') || currentUser?.userId === mant.userId) && (
+                <button
+                  className={`flex items-center gap-2 px-4 py-2 text-sm text-red-700 hover:bg-red-50 font-semibold w-full ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}
+                  onClick={() => { setIsOpen(null); handleDelete(mant.id); }}
+                  disabled={isDeleting || isRestoring}
+                  aria-label="Eliminar mantención"
+                  title="Eliminar"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  {isDeleting ? 'Eliminando...' : 'Eliminar'}
+                </button>
+              )
             )}
 
           </div>
