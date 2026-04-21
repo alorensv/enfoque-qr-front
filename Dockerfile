@@ -4,8 +4,7 @@ COPY package.json ./
 RUN npm install --legacy-peer-deps || true
 COPY . .
 
-# Instala nodemon globalmente para hot reload
-RUN npm install -g nodemon
+# No instalar nodemon para evitar conflictos de I/O en Windows
 
 EXPOSE 3000
 
@@ -13,5 +12,6 @@ EXPOSE 3000
 ENV NODE_ENV=development
 ENV CHOKIDAR_USEPOLLING=true
 
-# Usa nodemon para hot reload en desarrollo
-CMD ["nodemon", "--legacy-watch", "--watch", ".", "--ext", "js,jsx,ts,tsx,json", "--exec", "npm run dev"]
+# Ejecutar el servidor de desarrollo de Next.js directamente
+# Next.js ya maneja el hot reload (watch) internamente.
+CMD ["npm", "run", "dev"]
