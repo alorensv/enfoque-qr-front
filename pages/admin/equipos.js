@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { useRouter } from 'next/router';
 import AdminLayout from '../../components/AdminLayout';
 import Link from 'next/link';
 import html2canvas from 'html2canvas';
@@ -24,14 +25,68 @@ export default function EquiposPage() {
   const [scanLogsPage, setScanLogsPage] = useState(1);
   const [scanLogsTotal, setScanLogsTotal] = useState(0);
 
+  // ── Filtros ──
+  const router = useRouter();
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [clientFilter, setClientFilter] = useState('');
+
+  // Preseleccionar cliente desde la URL (?clientId=) — viene desde la vista de Clientes
+  useEffect(() => {
+    if (router.query.clientId) setClientFilter(String(router.query.clientId));
+  }, [router.query.clientId]);
+
+  // Opciones derivadas de los equipos cargados
+  const clientOptions = useMemo(() => {
+    const list = Array.isArray(equipos) ? equipos : [];
+    const map = new Map();
+    list.forEach((e) => { if (e.client?.id) map.set(String(e.client.id), e.client.name); });
+    return Array.from(map, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [equipos]);
+
+  const statusOptions = useMemo(() => {
+    const list = Array.isArray(equipos) ? equipos : [];
+    const set = new Set();
+    list.forEach((e) => { if (e.status) set.add(e.status); });
+    return Array.from(set).sort();
+  }, [equipos]);
+
+  const filteredEquipos = useMemo(() => {
+    const list = Array.isArray(equipos) ? equipos : [];
+    const q = search.trim().toLowerCase();
+    return list.filter((e) => {
+      if (clientFilter) {
+        if (clientFilter === '__none__') { if (e.client?.id) return false; }
+        else if (String(e.client?.id) !== clientFilter) return false;
+      }
+      if (statusFilter && e.status !== statusFilter) return false;
+      if (q) {
+        const hay = `${e.name || ''} ${e.serialNumber || ''} ${e.client?.name || ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [equipos, search, statusFilter, clientFilter]);
+
+  const hasFilters = !!(search || statusFilter || clientFilter);
+  const selectedClientName = clientFilter && clientFilter !== '__none__'
+    ? clientOptions.find((c) => c.id === clientFilter)?.name
+    : null;
+  const clearFilters = () => { setSearch(''); setStatusFilter(''); setClientFilter(''); };
+
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/equipments`, {
       credentials: 'include',
     })
-      .then(res => res.json())
+      .then(async (res) => {
+        if (!res.ok) throw new Error('Error al cargar equipos');
+        return res.json();
+      })
       .then(async (data) => {
+        // La API siempre debería devolver un arreglo; si no, evitar el crash.
+        if (!Array.isArray(data)) data = [];
         setEquipos(data);
-        
+
         // Obtener el logo de la institución desde el primer equipo
         if (data.length > 0 && data[0].institution?.settings?.logo_url) {
           const logoUrl = data[0].institution.settings.logo_url;
@@ -201,22 +256,46 @@ export default function EquiposPage() {
               </Link>
             </div>
           ) : (
-            <div className="w-full overflow-hidden">
+            <>
+              {/* Barra de filtros */}
+              <div className="flex flex-col md:flex-row md:items-center gap-2 p-3 border-b border-gray-100">
+                <div className="relative flex-1 min-w-0">
+                  <svg className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" /></svg>
+                  <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nombre, serie o cliente…" className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                </div>
+                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="py-2 px-3 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-300">
+                  <option value="">Todos los estados</option>
+                  {statusOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+                <select value={clientFilter} onChange={(e) => setClientFilter(e.target.value)} className="py-2 px-3 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-300 max-w-[220px]">
+                  <option value="">Todos los clientes</option>
+                  <option value="__none__">Sin cliente</option>
+                  {clientOptions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                {hasFilters && (
+                  <button onClick={clearFilters} className="py-2 px-3 text-sm font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg">Limpiar</button>
+                )}
+                <span className="text-xs text-gray-400 md:ml-1 whitespace-nowrap">{filteredEquipos.length} de {equipos.length}</span>
+              </div>
+              {filteredEquipos.length === 0 ? (
+                <div className="py-16 text-center text-gray-400">No hay equipos que coincidan con los filtros.</div>
+              ) : (
+              <div className="w-full overflow-hidden">
               <table className="w-full table-fixed divide-y divide-gray-200">
                 <colgroup>
-                  <col style={{ width: '26%' }} />
                   <col style={{ width: '24%' }} />
-                  <col style={{ width: '20%' }} />
+                  <col style={{ width: '15%' }} />
+                  <col style={{ width: '26%' }} />
                   <col style={{ width: '10%' }} />
                   <col style={{ width: '9%' }} />
-                  <col style={{ width: '6%' }} />
-                  <col style={{ width: '5%' }} />
+                  <col style={{ width: '8%' }} />
+                  <col style={{ width: '8%' }} />
                 </colgroup>
                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0 z-10">
                   <tr>
-                    <th className="px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Nombre</th>
+                    <th className="px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Equipo</th>
                     <th className="px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Cliente</th>
-                    <th className="px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Serie</th>
+                    <th className="px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Última actividad</th>
                     <th className="px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Estado</th>
                     <th className="px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">QR</th>
                     <th className="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Scans</th>
@@ -224,16 +303,19 @@ export default function EquiposPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
-                  {equipos.map(equipo => (
+                  {filteredEquipos.map(equipo => (
                     <tr key={equipo.id} className="hover:bg-blue-50/40 transition group">
 
-                      {/* NOMBRE — trunca si es muy largo, tooltip al pasar el mouse */}
+                      {/* EQUIPO — nombre + N/S como subtítulo */}
                       <td className="px-3 py-3 max-w-0">
                         <p
                           className="truncate font-semibold text-sm text-gray-900 group-hover:text-blue-700 transition"
                           title={equipo.name}
                         >
                           {equipo.name}
+                        </p>
+                        <p className="truncate text-xs text-gray-400" title={equipo.serialNumber || ''}>
+                          {equipo.serialNumber ? `N/S: ${equipo.serialNumber}` : 'Sin N/S'}
                         </p>
                       </td>
 
@@ -251,11 +333,9 @@ export default function EquiposPage() {
                         )}
                       </td>
 
-                      {/* SERIE — trunca */}
+                      {/* ÚLTIMA ACTIVIDAD */}
                       <td className="px-3 py-3 max-w-0">
-                        <p className="truncate text-sm text-gray-600" title={equipo.serialNumber}>
-                          {equipo.serialNumber || <span className="text-gray-300">—</span>}
-                        </p>
+                        <EquipoLastActivity activity={equipo.lastActivity} />
                       </td>
 
                       {/* ESTADO */}
@@ -324,6 +404,8 @@ export default function EquiposPage() {
                 </tbody>
               </table>
             </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -407,6 +489,50 @@ export default function EquiposPage() {
         </div>
       )}
     </AdminLayout>
+  );
+}
+
+// Fecha relativa ("hace 3 días")
+function timeAgo(value) {
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return '';
+  const diff = Date.now() - d.getTime();
+  const day = 86400000;
+  if (diff < day) return 'hoy';
+  const days = Math.floor(diff / day);
+  if (days === 1) return 'ayer';
+  if (days < 30) return `hace ${days} días`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `hace ${months} ${months === 1 ? 'mes' : 'meses'}`;
+  const years = Math.floor(months / 12);
+  return `hace ${years} ${years === 1 ? 'año' : 'años'}`;
+}
+
+// Celda compacta de "Última actividad" para la tabla de equipos
+function EquipoLastActivity({ activity }) {
+  if (!activity) return <span className="text-xs text-gray-400 italic">Sin actividad</span>;
+  const isMant = activity.type === 'mantención';
+  return (
+    <div className="flex items-center gap-2 min-w-0">
+      <span
+        className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+        style={{ backgroundColor: isMant ? '#dbeafe' : '#f1f5f9', color: isMant ? '#1d4ed8' : '#475569' }}
+      >
+        {isMant ? (
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085" /></svg>
+        ) : (
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+        )}
+      </span>
+      <div className="min-w-0">
+        <p className={`text-xs font-semibold truncate ${isMant ? 'text-blue-700' : 'text-slate-600'}`}>
+          {isMant ? 'Mantención' : 'Documento'}
+        </p>
+        <p className="text-xs text-gray-400 truncate">
+          {timeAgo(activity.date)}{activity.responsable ? ` · ${activity.responsable}` : ''}
+        </p>
+      </div>
+    </div>
   );
 }
 

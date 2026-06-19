@@ -262,17 +262,22 @@ export default function QrPage() {
                   .filter(doc => canSeePrivate || !doc.isPrivate)
                   .map(doc => (
                     <li key={doc.id} className="bg-gray-50 rounded-lg p-3 flex items-center justify-between gap-4 transition hover:bg-gray-100">
-                      <div className="flex-grow">
-                        <p className="font-semibold text-gray-900">
-                          {doc.name}
-                          {!!doc.isPrivate && <span className="ml-2 text-xs font-bold text-red-600">(Privado)</span>}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : ''}
-                          {doc.responsable ? ` · ${doc.responsable}` : ''}
-                        </p>
+                      <div className="flex items-center gap-3 flex-grow min-w-0">
+                        <span className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                        </span>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-gray-900 truncate">
+                            {doc.name}
+                            {!!doc.isPrivate && <span className="ml-2 text-xs font-bold text-red-600">(Privado)</span>}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : ''}
+                            {doc.responsable ? ` · ${doc.responsable}` : ''}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 flex-shrink-0">
                         {doc.filePath && (
                           <a
                             href={`${process.env.NEXT_PUBLIC_API_URL}/equipments/documents/${doc.id}/download`}
@@ -319,15 +324,20 @@ export default function QrPage() {
               ) : (
                 mantenciones.map(mant => (
                   <li key={mant.id} className="bg-gray-50 rounded-lg p-3 flex items-center justify-between gap-4 text-sm">
-                    <div>
-                      <p className="font-semibold text-gray-800">
-                        {new Date(mant.performedAt).toLocaleDateString()} - <span className="font-normal">{mant.status}</span>
-                      </p>
-                      <p className="text-xs text-gray-600">
-                        Resp: {mant.user?.userProfile?.fullName || mant.technician || 'No asignado'}
-                      </p>
+                    <div className="flex items-center gap-3 flex-grow min-w-0">
+                      <span className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                        <svg className="w-5 h-5 text-blue-800" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085" /></svg>
+                      </span>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-gray-800">
+                          {new Date(mant.performedAt).toLocaleDateString()} - <span className="font-normal">{mant.status}</span>
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          Resp: {mant.user?.userProfile?.fullName || mant.technician || 'No asignado'}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-shrink-0">
                       <button
                         className="text-blue-600 hover:underline font-medium"
                         onClick={() => router.push(`/qr/${token}/maintenances/detail?id=${mant.id}`)}
