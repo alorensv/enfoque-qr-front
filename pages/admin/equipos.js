@@ -4,6 +4,7 @@ import AdminLayout from '../../components/AdminLayout';
 import Link from 'next/link';
 import html2canvas from 'html2canvas';
 import EtiquetaEquipo from '../../components/EtiquetaEquipo';
+import EtiquetaEquipoCompacta from '../../components/EtiquetaEquipoCompacta';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function EquiposPage() {
@@ -541,6 +542,7 @@ function EquipmentActionsDropdown({ equipo, deletingId, handleDelete, qrs, isOpe
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
   const etiquetaRef = useRef(null);
+  const etiquetaCompactaRef = useRef(null);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
   const [isUp, setIsUp] = useState(false);
 
@@ -555,6 +557,22 @@ function EquipmentActionsDropdown({ equipo, deletingId, handleDelete, qrs, isOpe
 
     const link = document.createElement('a');
     link.download = `etiqueta-${equipo.name.replace(/\s+/g, '_')}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    setIsOpen(null);
+  };
+
+  const handleDownloadEtiquetaCompacta = async () => {
+    if (!etiquetaCompactaRef.current) return;
+
+    const canvas = await html2canvas(etiquetaCompactaRef.current, {
+      scale: 4, // Más escala por ser una etiqueta pequeña (mantiene nitidez al imprimir)
+      useCORS: true,
+      backgroundColor: null,
+    });
+
+    const link = document.createElement('a');
+    link.download = `etiqueta-compacta-${equipo.name.replace(/\s+/g, '_')}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
     setIsOpen(null);
@@ -637,6 +655,14 @@ function EquipmentActionsDropdown({ equipo, deletingId, handleDelete, qrs, isOpe
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
               Descargar Etiqueta
             </button>
+            <button
+              onClick={handleDownloadEtiquetaCompacta}
+              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-semibold w-full text-left"
+              title="Descargar etiqueta compacta (para el costado del equipo)"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z" /></svg>
+              Etiqueta compacta
+            </button>
             {qrs.map(qr => (
               <a
                 key={qr.token}
@@ -688,14 +714,23 @@ function EquipmentActionsDropdown({ equipo, deletingId, handleDelete, qrs, isOpe
       {/* Contenedor oculto para renderizar la etiqueta antes de la captura */}
       <div style={{ position: 'fixed', top: '-2000px', left: 0 }}>
         {qrs.length > 0 && (
-          <div ref={etiquetaRef}>
-            <EtiquetaEquipo
-              nombre={equipo.name}
-              numeroSerie={equipo.serialNumber}
-              qrValue={`${window.location.origin}/qr/${qrs[0].token}`}
-              logoUrl={institutionLogo}
-            />
-          </div>
+          <>
+            <div ref={etiquetaRef}>
+              <EtiquetaEquipo
+                nombre={equipo.name}
+                numeroSerie={equipo.serialNumber}
+                qrValue={`${window.location.origin}/qr/${qrs[0].token}`}
+                logoUrl={institutionLogo}
+              />
+            </div>
+            <div ref={etiquetaCompactaRef}>
+              <EtiquetaEquipoCompacta
+                nombre={equipo.name}
+                numeroSerie={equipo.serialNumber}
+                qrValue={`${window.location.origin}/qr/${qrs[0].token}`}
+              />
+            </div>
+          </>
         )}
       </div>
     </div>
