@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import FullScreenLoader from '../../../components/FullScreenLoader';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 const DAY = 86400000;
@@ -66,7 +67,7 @@ export default function ClientePublicoPage() {
       .finally(() => setLoading(false));
   }, [token]);
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Cargando información...</div>;
+  if (loading) return <FullScreenLoader label="Cargando información" />;
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
   if (!data) return null;
 

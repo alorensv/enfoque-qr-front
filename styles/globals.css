@@ -59,3 +59,29 @@ body {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
+
+/* ─── Skeleton con shimmer (barrido, se siente "cargando") ───────── */
+@keyframes eq-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.eq-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-neutral-soft) 25%,
+    #e9edf3 37%,
+    var(--color-neutral-soft) 63%
+  );
+  background-size: 200% 100%;
+  animation: eq-shimmer 1.4s ease-in-out infinite;
+  border-radius: 10px;
+}
+
+/* Puntos de carga animados para etiquetas ("Cargando" + . . .) */
+@keyframes eq-dot {
+  0%, 80%, 100% { opacity: 0.2; }
+  40%           { opacity: 1; }
+}
+.eq-dot { animation: eq-dot 1.2s infinite both; }
+.eq-dot:nth-child(2) { animation-delay: 0.15s; }
+.eq-dot:nth-child(3) { animation-delay: 0.3s; }

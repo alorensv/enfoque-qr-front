@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import AdminLayout from '../../../../components/AdminLayout';
+import InlineLoader from '../../../../components/InlineLoader';
 import { useAuth } from '../../../../contexts/AuthContext';
 
 export default function EditarUsuario() {
@@ -115,13 +116,7 @@ export default function EditarUsuario() {
   if (loading) {
     return (
       <AdminLayout>
-        <div className="flex flex-col items-center justify-center py-24 animate-pulse">
-          <svg className="w-12 h-12 text-blue-400 mb-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
-            <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="4" className="opacity-75" />
-          </svg>
-          <span className="text-gray-400 text-xl">Cargando usuario...</span>
-        </div>
+        <InlineLoader label="Cargando usuario" />
       </AdminLayout>
     );
   }

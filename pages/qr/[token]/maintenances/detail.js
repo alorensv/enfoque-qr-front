@@ -1,6 +1,7 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '/contexts/AuthContext';
+import FullScreenLoader from '../../../../components/FullScreenLoader';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 
@@ -135,7 +136,7 @@ export default function MaintenanceDetail() {
     }
   };
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Cargando detalle...</div>;
+  if (loading) return <FullScreenLoader label="Cargando detalle" />;
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
   if (!maintenance) return null;
 

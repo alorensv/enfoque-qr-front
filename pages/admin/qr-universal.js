@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import AdminLayout from '../../components/AdminLayout';
+import InlineLoader from '../../components/InlineLoader';
 import withAuth from '../../contexts/withAuth';
 import { useAuth } from '../../contexts/AuthContext';
 import { QRCodeSVG } from 'qrcode.react';
@@ -110,9 +111,7 @@ function QRUniversalManager() {
   if (loading) {
     return (
       <AdminLayout>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
-          <div style={{ color: '#64748b' }}>Cargando...</div>
-        </div>
+        <InlineLoader label="Cargando" py="py-32" />
       </AdminLayout>
     );
   }

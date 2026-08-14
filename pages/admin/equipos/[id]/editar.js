@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import AdminLayout from '../../../../components/AdminLayout';
+import InlineLoader from '../../../../components/InlineLoader';
 import EquipmentForm from '../../../../components/EquipmentForm';
 
 export default function EditarEquipo() {
@@ -62,7 +63,7 @@ export default function EditarEquipo() {
   if (loading) {
     return (
       <AdminLayout>
-        <div className="text-center py-10 text-gray-500">Cargando equipo...</div>
+        <InlineLoader label="Cargando equipo" />
       </AdminLayout>
     );
   }

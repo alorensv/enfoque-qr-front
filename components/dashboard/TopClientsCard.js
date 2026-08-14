@@ -21,8 +21,8 @@ export default function TopClientsCard({ clients = [], loading }) {
       </div>
 
       {loading ? (
-        <div className="animate-pulse space-y-3">
-          {[1, 2, 3, 4].map((i) => <div key={i} className="h-14 bg-slate-50 rounded-xl" />)}
+        <div className="space-y-3">
+          {[1, 2, 3, 4].map((i) => <div key={i} className="eq-skeleton h-14" />)}
         </div>
       ) : clients.length > 0 ? (
         <ul className="divide-y divide-slate-100">

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import FullScreenLoader from '../../../components/FullScreenLoader';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -88,9 +89,7 @@ export default function UniversalQRSearchByInstitution() {
         <Head>
           <title>Cargando... | EnfoqueQR</title>
         </Head>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-          <div className="text-gray-600">Cargando...</div>
-        </div>
+        <FullScreenLoader label="Cargando" />
       </>
     );
   }

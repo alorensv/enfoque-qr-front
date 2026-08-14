@@ -2,6 +2,7 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
 import { useAuth } from '/contexts/AuthContext';
+import FullScreenLoader from '../../components/FullScreenLoader';
 
 export default function QrPage() {
   const { user } = useAuth();
@@ -167,7 +168,7 @@ export default function QrPage() {
   };
 
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Cargando información...</div>;
+  if (loading) return <FullScreenLoader label="Cargando información" />;
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
   if (!qr) return null;
 

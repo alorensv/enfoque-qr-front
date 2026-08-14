@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import AdminLayout from '../../../components/AdminLayout';
+import InlineLoader from '../../../components/InlineLoader';
 import { qrApi } from '../../../services/api';
 
 export default function GenerateQRBatch() {
@@ -286,8 +287,8 @@ export default function GenerateQRBatch() {
 
         {/* Mensaje de carga */}
         {loadingAvailable && (
-          <div className="bg-white shadow-md rounded-lg p-6 text-center">
-            <p className="text-gray-600">Cargando códigos QR disponibles...</p>
+          <div className="bg-white shadow-md rounded-lg">
+            <InlineLoader label="Cargando códigos QR disponibles" py="py-10" />
           </div>
         )}
       </div>

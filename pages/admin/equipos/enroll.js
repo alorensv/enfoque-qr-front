@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import AdminLayout from '../../../components/AdminLayout';
+import InlineLoader from '../../../components/InlineLoader';
 import EquipmentForm from '../../../components/EquipmentForm';
 import { qrApi } from '../../../services/api';
 
@@ -263,9 +264,7 @@ export default function EnrollEquipment() {
                   {/* Lista de códigos QR */}
                   <div className="max-h-80 overflow-y-auto">
                     {loadingQRs ? (
-                      <div className="p-8 text-center text-gray-500">
-                        Cargando códigos QR...
-                      </div>
+                      <InlineLoader label="Cargando códigos QR" py="py-8" />
                     ) : availableQRs.length === 0 ? (
                       <div className="p-8 text-center text-gray-500">
                         No hay códigos QR disponibles

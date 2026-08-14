@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from './AuthContext';
+import FullScreenLoader from '../components/FullScreenLoader';
 
 export default function withAuth(Component) {
   return function AuthenticatedComponent(props) {
@@ -13,9 +14,11 @@ export default function withAuth(Component) {
       }
     }, [user, loading, router]);
 
-    if (loading || !user) {
-      return null; // Or a loading spinner
-    }
+    // Mientras se valida la sesión (o mientras se redirige al login si expiró),
+    // mostrar un loader con la marca en vez de una pantalla en blanco.
+    if (loading) return <FullScreenLoader label="Verificando sesión" />;
+    if (!user) return <FullScreenLoader label="Redirigiendo al inicio" />;
+
     return <Component {...props} />;
   };
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import AdminLayout from '../../../components/AdminLayout';
+import InlineLoader from '../../../components/InlineLoader';
 import { qrApi } from '../../../services/api';
 
 export default function AvailableQRCodes() {
@@ -89,9 +90,7 @@ export default function AvailableQRCodes() {
         {/* Tabla de códigos QR */}
         <div className="bg-white shadow-md rounded-lg overflow-hidden">
           {loading ? (
-            <div className="p-8 text-center">
-              <p className="text-gray-500">Cargando...</p>
-            </div>
+            <InlineLoader label="Cargando" py="py-12" />
           ) : qrCodes.length === 0 ? (
             <div className="p-8 text-center">
               <p className="text-gray-500">No hay códigos QR disponibles</p>
