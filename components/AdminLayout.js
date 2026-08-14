@@ -2,37 +2,44 @@ import { useState } from 'react';
 import AdminHeader from './AdminHeader';
 import AdminSidebar from './AdminSidebar';
 
+/**
+ * Layout del Panel Admin.
+ *
+ * Estructura: sidebar full-height a la izquierda + columna derecha con el
+ * header (sobre el contenido) y el main scrollable. El sidebar se encarga de su
+ * comportamiento sticky (desktop) y off-canvas (mobile).
+ */
 export default function AdminLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
-      background: '#f1f5f9',
-    }}>
-      {/* Header fijo en top */}
-      <AdminHeader toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+        background: 'var(--color-background)',
+      }}
+    >
+      {/* Sidebar (sticky en desktop, off-canvas en mobile) */}
+      <AdminSidebar
+        isOpen={sidebarOpen}
+        closeSidebar={() => setSidebarOpen(false)}
+      />
 
-      {/* Fila: sidebar + contenido
-          ⚠️ NO overflow:hidden aquí → permite el sticky del sidebar en desktop */}
-      <div style={{ display: 'flex', flex: 1 }}>
-        <AdminSidebar
-          isOpen={sidebarOpen}
-          closeSidebar={() => setSidebarOpen(false)}
-        />
+      {/* Columna derecha: header + contenido */}
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+        <AdminHeader toggleSidebar={() => setSidebarOpen((v) => !v)} />
 
-        {/* Main: scrollable, ocupa el espacio restante */}
-        <main style={{
-          flex: 1,
-          minWidth: 0,
-          overflowY: 'auto',
-          padding: '2rem',
-          // En mobile dejamos espacio para que el sidebar fijo no tape el content:
-          // No es necesario margen porque el sidebar está off-canvas en mobile
-        }}>
+        <main
+          className="p-4 sm:p-6 lg:p-8"
+          style={{
+            flex: 1,
+            minWidth: 0,
+            overflowY: 'auto',
+            background: 'var(--color-background)',
+          }}
+        >
           {children}
         </main>
       </div>

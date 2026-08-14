@@ -26,23 +26,23 @@ export default function ProfileMenu({ onLogout, onEditProfile, user }) {
           display: 'flex',
           alignItems: 'center',
           cursor: 'pointer',
-          gap: 10,
-          padding: '0.3rem 0.75rem 0.3rem 0.4rem',
+          gap: 8,
+          padding: '0.25rem 0.6rem 0.25rem 0.3rem',
           borderRadius: 28,
-          background: open ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.08)',
-          border: '1px solid rgba(255,255,255,0.2)',
+          background: open ? 'var(--color-neutral-soft)' : 'transparent',
+          border: '1px solid var(--color-border)',
           transition: 'background 0.2s, box-shadow 0.2s',
-          boxShadow: open ? '0 0 0 2px rgba(255,255,255,0.25)' : 'none',
         }}
-        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
-        onMouseLeave={e => e.currentTarget.style.background = open ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.08)'}
+        onMouseEnter={e => e.currentTarget.style.background = 'var(--color-neutral-soft)'}
+        onMouseLeave={e => e.currentTarget.style.background = open ? 'var(--color-neutral-soft)' : 'transparent'}
       >
         {/* Avatar con iniciales */}
         <span style={{
           width: 32,
           height: 32,
           borderRadius: '50%',
-          background: 'rgba(255,255,255,0.25)',
+          background: 'var(--color-primary-soft)',
+          color: 'var(--color-primary-strong)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -50,16 +50,15 @@ export default function ProfileMenu({ onLogout, onEditProfile, user }) {
           fontSize: '0.8rem',
           letterSpacing: 0.5,
           flexShrink: 0,
-          color: '#fff',
         }}>
           {initials}
         </span>
-        <span style={{ fontWeight: 500, fontSize: '0.95rem', letterSpacing: 0.2 }}>
+        <span className="hidden sm:block" style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--color-text-primary)' }}>
           {user?.name || 'Usuario'}
         </span>
         {/* Chevron down */}
         <svg
-          style={{ width: 14, height: 14, opacity: 0.8, flexShrink: 0, transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
+          style={{ width: 14, height: 14, color: 'var(--color-text-muted)', flexShrink: 0, transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
           fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />

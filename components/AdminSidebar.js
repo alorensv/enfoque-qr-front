@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
+import { useAuth } from '../contexts/AuthContext';
 
-/* ─── Íconos SVG inline ──────────────────────────────────────────── */
+/* ─── Íconos SVG inline (lineales, una sola familia) ─────────────── */
 const icons = {
   dashboard: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
@@ -53,6 +54,12 @@ const icons = {
       <path d="M16 16h.01M16 19h.01M19 16h.01M19 19h.01M13 3v5M3 13h5M13 13h.01M13 16h.01M13 19h.01" />
     </svg>
   ),
+  config: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  ),
   chevronLeft: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
       <path d="M15 18l-6-6 6-6" />
@@ -60,7 +67,7 @@ const icons = {
   ),
 };
 
-/* ─── Definición del menú ────────────────────────────────────────── */
+/* ─── Menú ────────────────────────────────────────────────────────── */
 const menu = [
   { label: 'Dashboard',    icon: icons.dashboard,    href: '/admin/home' },
   { label: 'Usuarios',     icon: icons.usuarios,     href: '/admin/usuarios' },
@@ -71,20 +78,25 @@ const menu = [
   { label: 'QR Universal', icon: icons.qr,           href: '/admin/qr-universal' },
 ];
 
-/* ─── Estilos compartidos del sidebar ───────────────────────────── */
+/* ─── Base del sidebar (tema claro) ──────────────────────────────── */
 const sidebarBase = {
   display: 'flex',
   flexDirection: 'column',
   fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
-  background: 'linear-gradient(175deg, #0f172a 0%, #1e293b 100%)',
-  borderRight: '1px solid rgba(255,255,255,0.06)',
-  boxShadow: '4px 0 32px rgba(0,0,0,0.35)',
+  background: 'var(--color-surface)',
+  borderRight: '1px solid var(--color-border)',
   overflowX: 'hidden',
   overflowY: 'auto',
   zIndex: 50,
 };
 
-import { useAuth } from '../contexts/AuthContext';
+const roleLabels = {
+  super_admin: 'Super Admin',
+  institution_admin: 'Administrador',
+  admin: 'Administrador',
+  institution_user: 'Usuario',
+  user: 'Usuario',
+};
 
 export default function AdminSidebar({ isOpen, closeSidebar }) {
   const { user } = useAuth();
@@ -95,20 +107,28 @@ export default function AdminSidebar({ isOpen, closeSidebar }) {
   const isActive = (href) =>
     router.pathname === href || router.pathname.startsWith(href + '/');
 
-  const sidebarWidth = isCollapsed ? 68 : 240;
+  const sidebarWidth = isCollapsed ? 72 : 244;
 
-  // Filtrar menú según rol
-  const filteredMenu = menu.filter(item => {
+  const filteredMenu = menu.filter((item) => {
     if (user?.role === 'institution_user') {
-      // Usuarios normales NO ven Usuarios ni Clientes
       return !['Usuarios', 'Clientes'].includes(item.label);
     }
     return true;
   });
 
+  const contentProps = {
+    isCollapsed,
+    setIsCollapsed,
+    hoveredItem,
+    setHoveredItem,
+    menu: filteredMenu,
+    isActive,
+    user,
+  };
+
   return (
     <>
-      {/* ── Overlay mobile (solo aparece en mobile cuando está abierto) ── */}
+      {/* Overlay mobile */}
       <div
         onClick={closeSidebar}
         className="lg:hidden"
@@ -116,7 +136,7 @@ export default function AdminSidebar({ isOpen, closeSidebar }) {
           position: 'fixed',
           inset: 0,
           zIndex: 40,
-          background: 'rgba(0,0,0,0.55)',
+          background: 'rgba(15,23,42,0.45)',
           backdropFilter: 'blur(2px)',
           opacity: isOpen ? 1 : 0,
           pointerEvents: isOpen ? 'auto' : 'none',
@@ -125,7 +145,7 @@ export default function AdminSidebar({ isOpen, closeSidebar }) {
         aria-hidden="true"
       />
 
-      {/* ── MOBILE: sidebar fixed off-canvas ───────────────────────────── */}
+      {/* MOBILE: off-canvas */}
       <aside
         className="lg:hidden"
         style={{
@@ -137,21 +157,13 @@ export default function AdminSidebar({ isOpen, closeSidebar }) {
           width: sidebarWidth,
           transform: isOpen ? 'translateX(0)' : 'translateX(-100%)',
           transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+          boxShadow: '4px 0 32px rgba(15,23,42,0.12)',
         }}
       >
-        <SidebarContent
-          isCollapsed={isCollapsed}
-          setIsCollapsed={setIsCollapsed}
-          hoveredItem={hoveredItem}
-          setHoveredItem={setHoveredItem}
-          menu={filteredMenu}
-          isActive={isActive}
-          icons={icons}
-        />
+        <SidebarContent {...contentProps} onNavigate={closeSidebar} />
       </aside>
 
-      {/* ── DESKTOP: sidebar sticky en el flujo del documento ──────────── */}
-      {/* Este aside SÍ ocupa espacio en el flex row → main va al costado */}
+      {/* DESKTOP: sticky en el flujo */}
       <aside
         className="hidden lg:flex"
         style={{
@@ -164,252 +176,244 @@ export default function AdminSidebar({ isOpen, closeSidebar }) {
           transition: 'width 0.3s cubic-bezier(0.4,0,0.2,1)',
         }}
       >
-        <SidebarContent
-          isCollapsed={isCollapsed}
-          setIsCollapsed={setIsCollapsed}
-          hoveredItem={hoveredItem}
-          setHoveredItem={setHoveredItem}
-          menu={filteredMenu}
-          isActive={isActive}
-          icons={icons}
-        />
+        <SidebarContent {...contentProps} />
       </aside>
     </>
   );
 }
 
-/* ─── Contenido interno del sidebar (compartido entre mobile/desktop) ─ */
-function SidebarContent({ isCollapsed, setIsCollapsed, hoveredItem, setHoveredItem, menu, isActive, icons }) {
+/* ─── Marca ───────────────────────────────────────────────────────── */
+function BrandMark({ isCollapsed }) {
   return (
-    <>
-      {/* ── Branding strip ──────────────────────── */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: isCollapsed ? 'center' : 'space-between',
-        padding: isCollapsed ? '1rem 0' : '1rem 1.25rem',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-        minHeight: 60,
-        flexShrink: 0,
-      }}>
-        {!isCollapsed && (
-          <span style={{
-            fontWeight: 800,
-            fontSize: '0.85rem',
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            background: 'linear-gradient(90deg, #60a5fa, #818cf8)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            whiteSpace: 'nowrap',
-          }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+      <span
+        style={{
+          width: 38,
+          height: 38,
+          borderRadius: 11,
+          background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-500) 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          boxShadow: 'var(--shadow-md)',
+        }}
+        aria-hidden="true"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1.5" />
+          <rect x="14" y="3" width="7" height="7" rx="1.5" />
+          <rect x="3" y="14" width="7" height="7" rx="1.5" />
+          <path d="M14 14h3M14 21h3M21 14v.01M21 17v4M17 17.5h.01" />
+        </svg>
+      </span>
+      {!isCollapsed && (
+        <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15, minWidth: 0 }}>
+          <span style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--color-text-primary)', letterSpacing: '-0.02em' }}>
+            Enfoque QR
+          </span>
+          <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', fontWeight: 500 }}>
             Panel Admin
           </span>
-        )}
+        </span>
+      )}
+    </div>
+  );
+}
 
-        {/* Botón colapsar */}
+/* ─── Contenido interno ──────────────────────────────────────────── */
+function SidebarContent({ isCollapsed, setIsCollapsed, hoveredItem, setHoveredItem, menu, isActive, user, onNavigate }) {
+  const initials = user?.name
+    ? user.name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()
+    : 'U';
+  const roleLabel = roleLabels[user?.role] || 'Usuario';
+  const configActive = isActive('/admin/perfil');
+
+  return (
+    <>
+      {/* Branding */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: isCollapsed ? 'center' : 'space-between',
+          padding: isCollapsed ? '1rem 0' : '1.1rem 1.1rem',
+          borderBottom: '1px solid var(--color-border-soft)',
+          minHeight: 66,
+          flexShrink: 0,
+        }}
+      >
+        {!isCollapsed && <BrandMark isCollapsed={isCollapsed} />}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
           title={isCollapsed ? 'Expandir menú' : 'Contraer menú'}
+          aria-label={isCollapsed ? 'Expandir menú' : 'Contraer menú'}
+          className="hidden lg:flex"
           style={{
-            display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: 28,
-            height: 28,
+            width: 26,
+            height: 26,
             borderRadius: 8,
-            border: '1px solid rgba(255,255,255,0.1)',
-            background: 'rgba(255,255,255,0.05)',
-            color: '#94a3b8',
+            border: '1px solid var(--color-border)',
+            background: 'var(--color-surface)',
+            color: 'var(--color-text-muted)',
             cursor: 'pointer',
             flexShrink: 0,
             transition: 'background 0.2s, color 0.2s',
           }}
-          onMouseEnter={e => {
-            e.currentTarget.style.background = 'rgba(255,255,255,0.12)';
-            e.currentTarget.style.color = '#e2e8f0';
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-            e.currentTarget.style.color = '#94a3b8';
-          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-neutral-soft)'; e.currentTarget.style.color = 'var(--color-text-secondary)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-surface)'; e.currentTarget.style.color = 'var(--color-text-muted)'; }}
         >
-          <span style={{
-            display: 'flex',
-            width: 16,
-            height: 16,
-            transform: isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 0.3s',
-          }}>
+          <span style={{ display: 'flex', width: 15, height: 15, transform: isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s' }}>
             {icons.chevronLeft}
           </span>
         </button>
       </div>
 
-      {/* ── Etiqueta de sección ──────────────────────── */}
+      {/* Etiqueta de sección */}
       {!isCollapsed && (
-        <div style={{
-          padding: '1rem 1.25rem 0.4rem',
-          color: '#475569',
-          fontSize: '0.68rem',
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase',
-          fontWeight: 600,
-          flexShrink: 0,
-        }}>
+        <div style={{ padding: '1.1rem 1.35rem 0.5rem', color: 'var(--color-text-muted)', fontSize: '0.68rem', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700, flexShrink: 0 }}>
           Navegación
         </div>
       )}
 
-      {/* ── Items del menú ───────────────────────────── */}
-      <nav style={{
-        flex: 1,
-        padding: isCollapsed ? '0.75rem 0.5rem' : '0.5rem 0.75rem',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 2,
-        overflowY: 'auto',
-      }}>
-        {menu.map((item) => {
-          const active = isActive(item.href);
-          const hovered = hoveredItem === item.href;
-
-          return (
-            <div
-              key={item.href}
-              style={{ position: 'relative' }}
-              onMouseEnter={() => setHoveredItem(item.href)}
-              onMouseLeave={() => setHoveredItem(null)}
-            >
-              <a
-                href={item.href}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: isCollapsed ? 0 : 12,
-                  justifyContent: isCollapsed ? 'center' : 'flex-start',
-                  padding: isCollapsed ? '0.7rem' : '0.65rem 0.9rem',
-                  borderRadius: 10,
-                  textDecoration: 'none',
-                  transition: 'background 0.18s, color 0.18s, box-shadow 0.18s',
-                  background: active
-                    ? 'linear-gradient(90deg, rgba(59,130,246,0.22) 0%, rgba(99,102,241,0.15) 100%)'
-                    : hovered
-                      ? 'rgba(255,255,255,0.06)'
-                      : 'transparent',
-                  color: active ? '#93c5fd' : hovered ? '#cbd5e1' : '#94a3b8',
-                  fontWeight: active ? 600 : 400,
-                  fontSize: '0.9rem',
-                  boxShadow: active ? 'inset 3px 0 0 #3b82f6' : 'none',
-                }}
-              >
-                {/* Ícono */}
-                <span style={{
-                  width: 20,
-                  height: 20,
-                  flexShrink: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: active ? '#60a5fa' : hovered ? '#cbd5e1' : '#94a3b8',
-                  transition: 'color 0.18s',
-                }}>
-                  {item.icon}
-                </span>
-
-                {/* Label con animación al colapsar */}
-                <span style={{
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  maxWidth: isCollapsed ? 0 : 180,
-                  opacity: isCollapsed ? 0 : 1,
-                  transition: 'max-width 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.2s',
-                  letterSpacing: '-0.01em',
-                }}>
-                  {item.label}
-                </span>
-
-                {/* Punto indicador activo */}
-                {active && !isCollapsed && (
-                  <span style={{
-                    marginLeft: 'auto',
-                    width: 6,
-                    height: 6,
-                    borderRadius: '50%',
-                    background: '#3b82f6',
-                    flexShrink: 0,
-                    boxShadow: '0 0 6px #3b82f6',
-                  }} />
-                )}
-              </a>
-
-              {/* Tooltip en modo colapsado (controlado por estado, sin CSS selector) */}
-              {isCollapsed && hovered && (
-                <div
-                  className="hidden lg:block"
-                  style={{
-                    position: 'absolute',
-                    left: '100%',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    marginLeft: 10,
-                    zIndex: 999,
-                    pointerEvents: 'none',
-                  }}
-                >
-                  <div style={{
-                    background: '#1e293b',
-                    color: '#e2e8f0',
-                    fontSize: '0.8rem',
-                    padding: '0.35rem 0.75rem',
-                    borderRadius: 7,
-                    whiteSpace: 'nowrap',
-                    boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    position: 'relative',
-                  }}>
-                    {item.label}
-                    <span style={{
-                      position: 'absolute',
-                      right: '100%',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      borderTop: '5px solid transparent',
-                      borderBottom: '5px solid transparent',
-                      borderRight: '5px solid #1e293b',
-                    }} />
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+      {/* Items */}
+      <nav style={{ flex: 1, padding: isCollapsed ? '0.75rem 0.6rem' : '0.35rem 0.75rem', display: 'flex', flexDirection: 'column', gap: 4, overflowY: 'auto' }}>
+        {menu.map((item) => (
+          <NavItem
+            key={item.href}
+            item={item}
+            active={isActive(item.href)}
+            hovered={hoveredItem === item.href}
+            isCollapsed={isCollapsed}
+            setHoveredItem={setHoveredItem}
+            onNavigate={onNavigate}
+          />
+        ))}
       </nav>
 
-      {/* ── Footer ───────────────────────────────────── */}
-      <div style={{
-        padding: isCollapsed ? '0.75rem 0.5rem' : '0.75rem 1.25rem',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: isCollapsed ? 'center' : 'flex-start',
-        gap: 10,
-        flexShrink: 0,
-      }}>
-        <span style={{
-          width: 8,
-          height: 8,
-          borderRadius: '50%',
-          background: '#22c55e',
-          boxShadow: '0 0 6px #22c55e',
-          flexShrink: 0,
-        }} />
-        {!isCollapsed && (
-          <span style={{ fontSize: '0.75rem', color: '#475569', letterSpacing: '-0.01em' }}>
-            Sistema activo
+      {/* Footer: Configuración + usuario */}
+      <div style={{ borderTop: '1px solid var(--color-border-soft)', padding: isCollapsed ? '0.6rem 0.6rem' : '0.6rem 0.75rem', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <NavItem
+          item={{ label: 'Configuración', icon: icons.config, href: '/admin/perfil' }}
+          active={configActive}
+          hovered={hoveredItem === '/admin/perfil'}
+          isCollapsed={isCollapsed}
+          setHoveredItem={setHoveredItem}
+          onNavigate={onNavigate}
+        />
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: isCollapsed ? '0.5rem 0' : '0.55rem 0.65rem',
+            justifyContent: isCollapsed ? 'center' : 'flex-start',
+            borderRadius: 10,
+            marginTop: 2,
+          }}
+        >
+          <span
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: '50%',
+              background: 'var(--color-primary-soft)',
+              color: 'var(--color-primary-strong)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 700,
+              fontSize: '0.8rem',
+              flexShrink: 0,
+            }}
+          >
+            {initials}
           </span>
-        )}
+          {!isCollapsed && (
+            <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2, minWidth: 0 }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 130 }}>
+                {user?.name || 'Usuario'}
+              </span>
+              <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{roleLabel}</span>
+            </span>
+          )}
+        </div>
       </div>
     </>
+  );
+}
+
+/* ─── Item de navegación ─────────────────────────────────────────── */
+function NavItem({ item, active, hovered, isCollapsed, setHoveredItem, onNavigate }) {
+  return (
+    <div
+      style={{ position: 'relative' }}
+      onMouseEnter={() => setHoveredItem(item.href)}
+      onMouseLeave={() => setHoveredItem(null)}
+    >
+      <a
+        href={item.href}
+        onClick={onNavigate}
+        aria-current={active ? 'page' : undefined}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: isCollapsed ? 0 : 12,
+          justifyContent: isCollapsed ? 'center' : 'flex-start',
+          padding: isCollapsed ? '0.68rem' : '0.62rem 0.85rem',
+          borderRadius: 11,
+          textDecoration: 'none',
+          transition: 'background 0.18s, color 0.18s',
+          background: active ? 'var(--color-primary-soft)' : hovered ? 'var(--color-neutral-soft)' : 'transparent',
+          color: active ? 'var(--color-primary-strong)' : 'var(--color-text-secondary)',
+          fontWeight: active ? 600 : 500,
+          fontSize: '0.9rem',
+          position: 'relative',
+        }}
+      >
+        {/* Acento izquierdo del activo */}
+        {active && !isCollapsed && (
+          <span style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', width: 3, height: 18, borderRadius: 3, background: 'var(--color-primary)' }} />
+        )}
+        <span
+          style={{
+            width: 20,
+            height: 20,
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: active ? 'var(--color-primary)' : hovered ? 'var(--color-text-secondary)' : 'var(--color-text-muted)',
+            transition: 'color 0.18s',
+          }}
+        >
+          {item.icon}
+        </span>
+        <span
+          style={{
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            maxWidth: isCollapsed ? 0 : 180,
+            opacity: isCollapsed ? 0 : 1,
+            transition: 'max-width 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.2s',
+            letterSpacing: '-0.01em',
+          }}
+        >
+          {item.label}
+        </span>
+      </a>
+
+      {/* Tooltip en colapsado */}
+      {isCollapsed && hovered && (
+        <div className="hidden lg:block" style={{ position: 'absolute', left: '100%', top: '50%', transform: 'translateY(-50%)', marginLeft: 10, zIndex: 999, pointerEvents: 'none' }}>
+          <div style={{ background: 'var(--color-text-primary)', color: '#fff', fontSize: '0.78rem', padding: '0.35rem 0.7rem', borderRadius: 7, whiteSpace: 'nowrap', boxShadow: 'var(--shadow-md)', position: 'relative' }}>
+            {item.label}
+            <span style={{ position: 'absolute', right: '100%', top: '50%', transform: 'translateY(-50%)', borderTop: '5px solid transparent', borderBottom: '5px solid transparent', borderRight: '5px solid var(--color-text-primary)' }} />
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

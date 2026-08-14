@@ -18,13 +18,15 @@ export default function Logo({ variant = 'full', theme = 'dark', height = 48 }) 
   const isDark   = theme === 'dark';
 
   // ── Colores según contexto ────────────────────────────────────────
-  const bgQR        = isDark ? '#0f172a'               : '#eff6ff';   // fondo bloque QR
-  const strokeQR    = isDark ? '#2563eb'               : '#2563eb';   // borde exterior
-  const fillCorner  = '#2563eb';                                       // esquinas QR (azul primario)
-  const fillCenter  = '#818cf8';                                       // módulos centro (indigo)
-  const crossColor  = '#22c55e';                                       // crosshair (verde activo)
-  const textMain    = isDark ? '#f1f5f9'               : '#1e293b';   // texto principal
-  const textSub     = isDark ? '#60a5fa'               : '#2563eb';   // subtext (azul claro / primario)
+  // Los colores de marca vienen de las variables del tema por dominio
+  // (ver front/lib/theme.js). Así el logo sigue el color del cliente.
+  const bgQR        = isDark ? '#0f172a'               : 'var(--color-primary-soft)';   // fondo bloque QR
+  const strokeQR    = isDark ? 'var(--color-primary-500)' : 'var(--color-primary)';     // borde exterior
+  const fillCorner  = 'var(--color-primary)';                                            // esquinas QR
+  const fillCenter  = 'var(--color-primary-500)';                                        // módulos centro
+  const crossColor  = '#22c55e';                                       // crosshair (verde "enfoque", universal)
+  const textMain    = isDark ? '#f1f5f9'               : '#0f172a';   // texto principal
+  const textSub     = isDark ? 'var(--color-primary-500)' : 'var(--color-primary)';     // subtext
 
   // ── Dimensiones ───────────────────────────────────────────────────
   const iconSize = 48;

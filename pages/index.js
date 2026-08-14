@@ -54,8 +54,8 @@ export default function Home() {
         <meta name="description" content="Landing page de Enfoque QR" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
-      <main className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-100 to-teal-50 font-sans p-4">
-        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 sm:p-10 text-center">
+      <main className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[var(--color-primary-soft)] to-slate-50 font-sans p-4">
+        <div className="bg-white rounded-2xl shadow-card border border-slate-100 w-full max-w-md p-8 sm:p-10 text-center">
 
           <div className="flex justify-center mb-6">
             <Logo theme="light" height={56} />
@@ -64,7 +64,7 @@ export default function Home() {
           {/* Tagline */}
           <p className="text-slate-800 text-xl font-bold mb-1 tracking-tight">
             Gestiona equipos y documentos
-            {' '}<span className="text-blue-600">sin fricción</span>.
+            {' '}<span className="text-[var(--color-primary)]">sin fricción</span>.
           </p>
           <p className="text-slate-500 text-sm mb-6 leading-relaxed">
             Una plataforma centralizada para escanear, registrar y mantener todo bajo control.
@@ -101,7 +101,7 @@ export default function Home() {
             ].map(({ icon, label }) => (
               <span
                 key={label}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100"
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[var(--color-primary-soft)] text-[var(--color-primary-strong)] border border-[var(--color-primary-soft2)]"
               >
                 {icon}
                 {label}
@@ -115,7 +115,7 @@ export default function Home() {
               placeholder="Correo electrónico"
               required
               autoComplete="username"
-              className="w-full px-4 py-3 rounded-lg border border-slate-300 text-base outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
+              className="w-full px-4 py-3 rounded-lg border border-slate-300 text-base outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary-soft2)] transition-all"
             />
             <input
               type="password"
@@ -123,19 +123,19 @@ export default function Home() {
               placeholder="Contraseña"
               required
               autoComplete="current-password"
-              className="w-full px-4 py-3 rounded-lg border border-slate-300 text-base outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
+              className="w-full px-4 py-3 rounded-lg border border-slate-300 text-base outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary-soft2)] transition-all"
             />
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg font-semibold text-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-75 disabled:cursor-not-allowed transition-colors"
+              className="w-full bg-[var(--color-primary)] text-white px-4 py-3 rounded-lg font-semibold text-lg shadow-xs hover:bg-[var(--color-primary-hover)] active:translate-y-px focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 disabled:opacity-75 disabled:cursor-not-allowed transition-all"
             >
               {loading ? 'Ingresando...' : 'Iniciar sesión'}
             </button>
             {error && <div className="text-red-600 text-sm mt-1">{error}</div>}
-            {success && <div className="text-green-600 text-sm mt-1">{success}</div>}
+            {success && <div className="text-[var(--color-primary)] text-sm mt-1">{success}</div>}
           </form>
-          <a href="#" className="text-blue-600 text-sm hover:underline hover:text-blue-800 transition-colors">
+          <a href="#" className="text-[var(--color-primary)] text-sm hover:underline hover:text-[var(--color-primary-hover)] transition-colors">
             ¿Olvidaste tu contraseña?
           </a>
         </div>

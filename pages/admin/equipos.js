@@ -99,39 +99,10 @@ export default function EquiposPage() {
           }
         }
         
-        // Para cada equipo, buscar sus QR y documentos
-        const [qrResults, docResults] = await Promise.all([
-          Promise.all(
-            data.map(async (equipo) => {
-              try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/equipments/${equipo.id}/qrs`, {
-                  credentials: 'include',
-                });
-                if (!res.ok) return [equipo.id, []];
-                const qrs = await res.json();
-                return [equipo.id, qrs];
-              } catch {
-                return [equipo.id, []];
-              }
-            })
-          ),
-          Promise.all(
-            data.map(async (equipo) => {
-              try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/equipments/${equipo.id}/documents`, {
-                  credentials: 'include',
-                });
-                if (!res.ok) return [equipo.id, 0];
-                const docs = await res.json();
-                return [equipo.id, Array.isArray(docs) ? docs.length : 0];
-              } catch {
-                return [equipo.id, 0];
-              }
-            })
-          )
-        ]);
-        setQrMap(Object.fromEntries(qrResults));
-        setDocMap(Object.fromEntries(docResults));
+        // El listado ya trae `qrs` y `documentsCount` por equipo (batch en el
+        // backend), así evitamos el N+1 de pedir /qrs y /documents por fila.
+        setQrMap(Object.fromEntries(data.map((e) => [e.id, Array.isArray(e.qrs) ? e.qrs : []])));
+        setDocMap(Object.fromEntries(data.map((e) => [e.id, e.documentsCount || 0])));
         // Obtener conteos de escaneos en lote
         if (data.length > 0) {
           const equipmentIds = data.map(e => e.id);
