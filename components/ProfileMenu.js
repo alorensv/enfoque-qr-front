@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { displayName, initials as getInitials } from '../lib/user';
 
 export default function ProfileMenu({ onLogout, onEditProfile, user }) {
   const [open, setOpen] = useState(false);
@@ -14,9 +15,7 @@ export default function ProfileMenu({ onLogout, onEditProfile, user }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open]);
 
-  const initials = user?.name
-    ? user.name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()
-    : 'U';
+  const initials = getInitials(user);
 
   return (
     <div ref={menuRef} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -53,8 +52,8 @@ export default function ProfileMenu({ onLogout, onEditProfile, user }) {
         }}>
           {initials}
         </span>
-        <span className="hidden sm:block" style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--color-text-primary)' }}>
-          {user?.name || 'Usuario'}
+        <span className="hidden sm:block" style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--color-text-primary)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {displayName(user)}
         </span>
         {/* Chevron down */}
         <svg

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
+import { displayName, roleLabel, initials as getInitials } from '../lib/user';
 
 /* ─── Íconos SVG inline (lineales, una sola familia) ─────────────── */
 const icons = {
@@ -88,14 +89,6 @@ const sidebarBase = {
   overflowX: 'hidden',
   overflowY: 'auto',
   zIndex: 50,
-};
-
-const roleLabels = {
-  super_admin: 'Super Admin',
-  institution_admin: 'Administrador',
-  admin: 'Administrador',
-  institution_user: 'Usuario',
-  user: 'Usuario',
 };
 
 export default function AdminSidebar({ isOpen, closeSidebar }) {
@@ -223,10 +216,7 @@ function BrandMark({ isCollapsed }) {
 
 /* ─── Contenido interno ──────────────────────────────────────────── */
 function SidebarContent({ isCollapsed, setIsCollapsed, hoveredItem, setHoveredItem, menu, isActive, user, onNavigate }) {
-  const initials = user?.name
-    ? user.name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()
-    : 'U';
-  const roleLabel = roleLabels[user?.role] || 'Usuario';
+  const initials = getInitials(user);
   const configActive = isActive('/admin/perfil');
 
   return (
@@ -333,10 +323,10 @@ function SidebarContent({ isCollapsed, setIsCollapsed, hoveredItem, setHoveredIt
           </span>
           {!isCollapsed && (
             <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2, minWidth: 0 }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 130 }}>
-                {user?.name || 'Usuario'}
+              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 150 }}>
+                {displayName(user)}
               </span>
-              <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{roleLabel}</span>
+              <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{roleLabel(user)}</span>
             </span>
           )}
         </div>
