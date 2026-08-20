@@ -1,4 +1,5 @@
 import Head from 'next/head';
+import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
@@ -139,6 +140,15 @@ export default function Home() {
             ¿Olvidaste tu contraseña?
           </a>
         </div>
+
+        {/* Pie con enlaces legales */}
+        <footer className="mt-6 flex items-center justify-center gap-4 text-sm">
+          <Link href="/privacidad" className="text-slate-500 hover:text-[var(--color-primary)] transition-colors">
+            Política de Privacidad
+          </Link>
+          <span className="text-slate-300" aria-hidden="true">·</span>
+          <span className="text-slate-400">© {new Date().getFullYear()} Enfoque QR</span>
+        </footer>
       </main>
     </>
   );

@@ -1,10 +1,14 @@
-FROM node:20-alpine
+FROM node:22-alpine
 WORKDIR /app
-COPY package.json ./
-RUN npm install --legacy-peer-deps || true
-COPY . .
 
-# No instalar nodemon para evitar conflictos de I/O en Windows
+# pnpm como gestor de paquetes
+RUN npm install -g pnpm@10
+
+# Instalar dependencias con el lockfile de pnpm (.npmrc: hoist de styled-jsx)
+COPY package.json pnpm-lock.yaml .npmrc ./
+RUN pnpm install
+
+COPY . .
 
 EXPOSE 3000
 
@@ -12,6 +16,5 @@ EXPOSE 3000
 ENV NODE_ENV=development
 ENV CHOKIDAR_USEPOLLING=true
 
-# Ejecutar el servidor de desarrollo de Next.js directamente
-# Next.js ya maneja el hot reload (watch) internamente.
-CMD ["npm", "run", "dev"]
+# Next.js maneja el hot reload internamente
+CMD ["pnpm", "run", "dev"]

@@ -1,8 +1,7 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+/* Tailwind CSS v4 — importa el motor y usa la config JS legacy (colores,
+   sombras y fuente extendidos en tailwind.config.js). */
+@import "tailwindcss";
+@config "../tailwind.config.js";
 
 /* ─── Design tokens · Enfoque QR ──────────────────────────────────────
    Referencia completa en docs/design-system-enfoque-qr.md */

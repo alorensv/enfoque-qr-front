@@ -1,5 +1,5 @@
 import React from 'react';
-import QRCode from 'qrcode.react';
+import { QRCodeSVG as QRCode } from 'qrcode.react';
 
 /**
  * Etiqueta compacta (miniatura) para pegar al costado de los equipos.
@@ -22,7 +22,7 @@ export default function EtiquetaEquipoCompacta({ nombre, numeroSerie, qrValue })
       textAlign: 'center'
     }}>
       <div style={{ padding: '4px', border: '1px solid #f0f0f0', borderRadius: '4px' }}>
-        <QRCode value={qrValue} size={120} level="H" includeMargin={false} />
+        <QRCode value={qrValue} size={120} level="H" marginSize={0} />
       </div>
       <div style={{ fontWeight: 'bold', fontSize: '12px', color: '#222', lineHeight: '1.2', marginTop: '8px', overflowWrap: 'break-word', wordBreak: 'break-word', maxWidth: '100%' }}>{nombre}</div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginTop: '4px', maxWidth: '100%' }}>

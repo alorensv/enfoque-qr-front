@@ -232,7 +232,7 @@ function QRUniversalManager() {
                   value={universalQRUrl}
                   size={240}
                   level="H"
-                  includeMargin={false}
+                  marginSize={0}
                 />
               </div>
 

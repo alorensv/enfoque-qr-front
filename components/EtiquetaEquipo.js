@@ -1,5 +1,5 @@
 import React from 'react';
-import QRCode from 'qrcode.react';
+import { QRCodeSVG as QRCode } from 'qrcode.react';
 
 export default function EtiquetaEquipo({ nombre, numeroSerie, qrValue, logoUrl }) {
   return (
@@ -17,7 +17,7 @@ export default function EtiquetaEquipo({ nombre, numeroSerie, qrValue, logoUrl }
       border: '1px solid #eee'
     }}>
       <div style={{ padding: '6px', border: '1px solid #f0f0f0', borderRadius: '6px', marginRight: '12px' }}>
-        <QRCode value={qrValue} size={130} level="H" includeMargin={false} />
+        <QRCode value={qrValue} size={130} level="H" marginSize={0} />
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-around', height: '100%', minWidth: 0 }}>
         <div style={{ width: '100%' }}>

@@ -356,7 +356,7 @@ export default function ClientesPage() {
                 value={typeof window !== 'undefined' ? `${window.location.origin}/qr/cliente/${labelClient.token}` : ''}
                 size={240}
                 level="H"
-                includeMargin={false}
+                marginSize={0}
               />
             </div>
             <div style={{ borderTop: '1px solid #f1f5f9', width: '100%', paddingTop: 20 }}>

@@ -1,7 +1,7 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
-import { useAuth } from '/contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import FullScreenLoader from '../../components/FullScreenLoader';
 
 export default function QrPage() {

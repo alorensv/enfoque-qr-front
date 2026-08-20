@@ -1,6 +1,6 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState, useCallback } from 'react';
-import { useAuth } from '/contexts/AuthContext';
+import { useAuth } from '../../../../contexts/AuthContext';
 import FullScreenLoader from '../../../../components/FullScreenLoader';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
