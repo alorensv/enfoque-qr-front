@@ -17,7 +17,7 @@ const ACTION_LABELS = {
 
 export default function MaintenanceDetail() {
   const router = useRouter();
-  const { id } = router.query;
+  const { id, token: qrToken } = router.query;
   const { user } = useAuth();
 
   const [loading, setLoading] = useState(true);
@@ -33,15 +33,16 @@ export default function MaintenanceDetail() {
   const [msg, setMsg] = useState(null);
 
   const load = useCallback(async () => {
-    if (!id) return;
+    if (!id || !qrToken) return;
     setLoading(true);
     setError(null);
     try {
+      const t = encodeURIComponent(qrToken);
       const [mant, docs, phs, lgs] = await Promise.all([
-        fetch(`${API}/maintenances/${id}`, { credentials: 'include' }).then((r) => (r.ok ? r.json() : Promise.reject('No encontrado'))),
-        fetch(`${API}/maintenances/${id}/documents`, { credentials: 'include' }).then((r) => (r.ok ? r.json() : [])),
-        fetch(`${API}/maintenances/${id}/photos`, { credentials: 'include' }).then((r) => (r.ok ? r.json() : [])),
-        fetch(`${API}/maintenances/${id}/logs`, { credentials: 'include' }).then((r) => (r.ok ? r.json() : [])),
+        fetch(`${API}/maintenances/${id}?token=${t}`, { credentials: 'include' }).then((r) => (r.ok ? r.json() : Promise.reject('No encontrado'))),
+        fetch(`${API}/maintenances/${id}/documents?token=${t}`, { credentials: 'include' }).then((r) => (r.ok ? r.json() : [])),
+        fetch(`${API}/maintenances/${id}/photos?token=${t}`, { credentials: 'include' }).then((r) => (r.ok ? r.json() : [])),
+        fetch(`${API}/maintenances/${id}/logs?token=${t}`, { credentials: 'include' }).then((r) => (r.ok ? r.json() : [])),
       ]);
       setMaintenance(mant);
       setDocuments(docs);
@@ -52,7 +53,7 @@ export default function MaintenanceDetail() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, qrToken]);
 
   useEffect(() => {
     load();
@@ -234,7 +235,7 @@ export default function MaintenanceDetail() {
                   <span className="text-xs text-gray-500">{doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : '-'}{doc.responsable ? ` · ${doc.responsable}` : ''}</span>
                 </div>
                 {doc.filePath ? (
-                  <a href={`${API}/maintenances/documents/${doc.id}/download`} className="text-blue-600 hover:underline text-xs" target="_blank" rel="noopener noreferrer">Descargar</a>
+                  <a href={`${API}/maintenances/documents/${doc.id}/download?token=${encodeURIComponent(qrToken || '')}`} className="text-blue-600 hover:underline text-xs" target="_blank" rel="noopener noreferrer">Descargar</a>
                 ) : (
                   <span className="text-gray-400 text-xs">Sin archivo</span>
                 )}
@@ -270,7 +271,7 @@ export default function MaintenanceDetail() {
                 )}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={`${API}/maintenances/photos/${photo.id}/file`}
+                  src={`${API}/maintenances/photos/${photo.id}/file?token=${encodeURIComponent(qrToken || '')}`}
                   alt="Foto de mantención"
                   className="w-full h-32 object-cover rounded mb-2 border"
                   style={{ maxWidth: 180 }}

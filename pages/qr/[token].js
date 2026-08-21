@@ -80,8 +80,8 @@ export default function QrPage() {
           } else {
             setDocumentos([]);
           }
-          // Obtener mantenciones reales
-          const mantRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/maintenances/equipment/${equipoId}`, {
+          // Obtener mantenciones reales (atado al token del QR escaneado)
+          const mantRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/maintenances/equipment/${equipoId}?token=${encodeURIComponent(token || '')}`, {
             credentials: 'include',
           });
           if (mantRes.ok) {
