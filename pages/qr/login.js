@@ -1,5 +1,6 @@
 import { useRouter } from 'next/router';
 import { useState } from 'react';
+import Link from 'next/link';
 import Cookies from 'js-cookie';
 
 export default function QrLogin() {
@@ -64,6 +65,9 @@ export default function QrLogin() {
           </button>
         </form>
         {error && <div className="text-red-600 text-sm text-center mt-1">{error}</div>}
+        <Link href="/recuperar-password" className="text-blue-600 text-sm hover:underline transition-colors">
+          ¿Olvidaste tu contraseña?
+        </Link>
       </div>
     </div>
   );

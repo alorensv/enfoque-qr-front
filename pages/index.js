@@ -136,9 +136,9 @@ export default function Home() {
             {error && <div className="text-red-600 text-sm mt-1">{error}</div>}
             {success && <div className="text-[var(--color-primary)] text-sm mt-1">{success}</div>}
           </form>
-          <a href="#" className="text-[var(--color-primary)] text-sm hover:underline hover:text-[var(--color-primary-hover)] transition-colors">
+          <Link href="/recuperar-password" className="text-[var(--color-primary)] text-sm hover:underline hover:text-[var(--color-primary-hover)] transition-colors">
             ¿Olvidaste tu contraseña?
-          </a>
+          </Link>
         </div>
 
         {/* Pie con enlaces legales */}
