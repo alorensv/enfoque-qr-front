@@ -1,6 +1,7 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../../../../contexts/AuthContext';
+import { maintenanceFormsApi } from '../../../../services/api';
 
 export default function NuevaMantencion() {
   const { user } = useAuth();
@@ -20,6 +21,12 @@ export default function NuevaMantencion() {
   const [saveMsg, setSaveMsg] = useState(null);
   const photosRef = useRef();
   const docsRef = useRef();
+
+  // Formulario dinámico opcional (docs/28_dynamic_form_maintences.md)
+  const [formularios, setFormularios] = useState([]);
+  const [selectedFormId, setSelectedFormId] = useState('');
+  const [formAnswers, setFormAnswers] = useState({}); // { [fieldId]: value }
+  const selectedFormulario = formularios.find((f) => String(f.id) === String(selectedFormId)) || null;
 
   const [currentDateTime, setCurrentDateTime] = useState('');
 
@@ -50,10 +57,25 @@ export default function NuevaMantencion() {
       })
       .catch(() => setError('Error al validar el token'))
       .finally(() => setValidando(false));
+
+    // Formularios disponibles para este equipo (opcional)
+    maintenanceFormsApi
+      .getAvailableByToken(token)
+      .then((data) => setFormularios(Array.isArray(data) ? data : []))
+      .catch(() => setFormularios([]));
   }, [token]);
 
   const handleChange = e => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSelectFormulario = (id) => {
+    setSelectedFormId(id);
+    setFormAnswers({});
+  };
+
+  const handleAnswerChange = (fieldId, value) => {
+    setFormAnswers((prev) => ({ ...prev, [fieldId]: value }));
   };
 
   // Función para comprimir imágenes
@@ -115,7 +137,18 @@ export default function NuevaMantencion() {
       setSaveMsg('Usuario no autenticado');
       return;
     }
-    
+
+    // Validar campos requeridos del formulario dinámico (si hay uno seleccionado)
+    if (selectedFormulario) {
+      const faltante = (selectedFormulario.fields || []).find(
+        (f) => f.required && !formAnswers[f.id],
+      );
+      if (faltante) {
+        setSaveMsg(`Falta responder el campo requerido "${faltante.label}"`);
+        return;
+      }
+    }
+
     // Validar tamaño de archivos (máximo 20MB por solicitud)
     const MAX_SIZE = 20 * 1024 * 1024; // 20MB en bytes
     const photos = photosRef.current?.files;
@@ -148,12 +181,23 @@ export default function NuevaMantencion() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      // 1. Crear mantención (POST JSON)
+      // 1. Crear mantención (POST JSON), con formulario dinámico opcional
+      const answers = selectedFormulario
+        ? (selectedFormulario.fields || [])
+            .filter((f) => formAnswers[f.id] !== undefined && formAnswers[f.id] !== '')
+            .map((f) => ({ fieldId: f.id, value: String(formAnswers[f.id]) }))
+        : undefined;
+
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/maintenances/equipment/${equipo.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ ...form, userId: user?.userId}),
+        body: JSON.stringify({
+          ...form,
+          userId: user?.userId,
+          formTemplateId: selectedFormulario ? selectedFormulario.id : undefined,
+          answers,
+        }),
       });
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({ message: 'Error desconocido' }));
@@ -300,6 +344,68 @@ export default function NuevaMantencion() {
               <option value="incompleta">Incompleta</option>
             </select>
           </label>
+
+          {formularios.length > 0 && (
+            <label className="text-sm font-semibold">Formulario a completar (opcional):
+              <select
+                className="border rounded px-2 py-1 text-sm w-full mt-1"
+                value={selectedFormId}
+                onChange={(e) => handleSelectFormulario(e.target.value)}
+              >
+                <option value="">Ninguno (solo datos básicos)</option>
+                {formularios.map((f) => (
+                  <option key={f.id} value={f.id}>{f.name}</option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          {selectedFormulario && (
+            <div className="border rounded-lg p-3 bg-blue-50/50 flex flex-col gap-3">
+              <p className="text-sm font-bold text-gray-700">{selectedFormulario.name}</p>
+              {(selectedFormulario.fields || [])
+                .slice()
+                .sort((a, b) => a.orderIndex - b.orderIndex)
+                .map((field) => (
+                  <label key={field.id} className="text-sm font-semibold">
+                    {field.fieldType === 'checklist' ? (
+                      <span className="flex items-center gap-2 font-normal">
+                        <input
+                          type="checkbox"
+                          checked={formAnswers[field.id] === 'true'}
+                          onChange={(e) => handleAnswerChange(field.id, e.target.checked ? 'true' : 'false')}
+                        />
+                        {field.label}{field.required && ' *'}
+                      </span>
+                    ) : field.fieldType === 'select' ? (
+                      <>
+                        {field.label}{field.required && ' *'}
+                        <select
+                          className="border rounded px-2 py-1 text-sm w-full mt-1"
+                          value={formAnswers[field.id] || ''}
+                          onChange={(e) => handleAnswerChange(field.id, e.target.value)}
+                        >
+                          <option value="">Selecciona una opción</option>
+                          {(field.options || []).map((opt) => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                      </>
+                    ) : (
+                      <>
+                        {field.label}{field.required && ' *'}
+                        <textarea
+                          className="border rounded px-2 py-1 text-sm w-full mt-1 min-h-[50px]"
+                          value={formAnswers[field.id] || ''}
+                          onChange={(e) => handleAnswerChange(field.id, e.target.value)}
+                        />
+                      </>
+                    )}
+                  </label>
+                ))}
+            </div>
+          )}
+
           <label className="text-sm font-semibold">Fotos (opcional, puedes seleccionar varias):
             <input
               type="file"
