@@ -28,6 +28,17 @@ export default function NuevaMantencion() {
   const [formAnswers, setFormAnswers] = useState({}); // { [fieldId]: value }
   const selectedFormulario = formularios.find((f) => String(f.id) === String(selectedFormId)) || null;
 
+  // Modo de registro: se elige antes de mostrar el formulario.
+  // null = sin elegir todavía · 'formulario' = usar un formulario predefinido
+  // · 'libre' = registro con texto libre, fecha, fotos y documentos.
+  const [modo, setModo] = useState(null);
+
+  const elegirModo = (m) => {
+    setModo(m);
+    setSelectedFormId(m === 'formulario' && formularios.length === 1 ? String(formularios[0].id) : '');
+    setFormAnswers({});
+  };
+
   const [currentDateTime, setCurrentDateTime] = useState('');
 
   // Validar token y cargar equipo
@@ -135,6 +146,11 @@ export default function NuevaMantencion() {
     e.preventDefault();
     if(!user.userId){
       setSaveMsg('Usuario no autenticado');
+      return;
+    }
+
+    if (modo === 'formulario' && !selectedFormulario) {
+      setSaveMsg('Selecciona un formulario para continuar');
       return;
     }
 
@@ -278,6 +294,63 @@ export default function NuevaMantencion() {
     </div>
   );
 
+  // Antes de mostrar cualquier campo, se elige cómo registrar la mantención.
+  if (!modo) {
+    return (
+      <div className="min-h-screen flex flex-col items-center bg-gray-50 py-4 px-2">
+        <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-4 md:p-8 flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 border-b pb-2">
+            <div className="flex-1">
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900">Nueva Mantención</h1>
+              {equipo && (
+                <div className="text-xs text-gray-400 mt-1">Equipo: <span className="font-mono bg-gray-100 px-1 rounded">{equipo.name}</span></div>
+              )}
+            </div>
+            <button
+              className="bg-gray-200 text-gray-700 px-3 py-1 rounded font-semibold text-xs hover:bg-gray-300"
+              onClick={() => router.push(`/qr/${token}`)}
+            >
+              Volver a la tarjeta
+            </button>
+          </div>
+
+          <p className="text-sm text-gray-600 mt-2">¿Cómo quieres registrar esta mantención?</p>
+
+          <div className="flex flex-col gap-3">
+            <button
+              type="button"
+              disabled={formularios.length === 0}
+              onClick={() => elegirModo('formulario')}
+              className="text-left border rounded-xl p-4 hover:border-blue-500 hover:bg-blue-50/50 transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:bg-transparent"
+            >
+              <p className="font-bold text-gray-900 flex items-center gap-2">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                Usar un formulario predefinido
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                {formularios.length > 0
+                  ? 'Completa un checklist o formulario configurado por tu institución.'
+                  : 'Tu institución todavía no tiene formularios configurados.'}
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => elegirModo('libre')}
+              className="text-left border rounded-xl p-4 hover:border-blue-500 hover:bg-blue-50/50 transition"
+            >
+              <p className="font-bold text-gray-900 flex items-center gap-2">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                Registro libre
+              </p>
+              <p className="text-xs text-gray-500 mt-1">Descripción libre, fecha, técnico responsable, fotos y documentos.</p>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-50 py-4 px-2">
       <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-4 md:p-8 flex flex-col gap-4">
@@ -290,12 +363,21 @@ export default function NuevaMantencion() {
               <div className="text-xs text-gray-400 mt-1">Equipo: <span className="font-mono bg-gray-100 px-1 rounded">{equipo.name}</span></div>
             )}
           </div>
-          <button
-            className="bg-gray-200 text-gray-700 px-3 py-1 rounded font-semibold text-xs hover:bg-gray-300"
-            onClick={() => router.push(`/qr/${token}`)}
-          >
-            Volver a la tarjeta
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className="bg-gray-200 text-gray-700 px-3 py-1 rounded font-semibold text-xs hover:bg-gray-300"
+              onClick={() => setModo(null)}
+            >
+              Elegir otro tipo
+            </button>
+            <button
+              className="bg-gray-200 text-gray-700 px-3 py-1 rounded font-semibold text-xs hover:bg-gray-300"
+              onClick={() => router.push(`/qr/${token}`)}
+            >
+              Volver a la tarjeta
+            </button>
+          </div>
         </div>
         <form className="flex flex-col gap-3 mt-2" onSubmit={handleSubmit} encType="multipart/form-data">
           <label className="text-sm font-semibold">Descripción:
@@ -345,14 +427,15 @@ export default function NuevaMantencion() {
             </select>
           </label>
 
-          {formularios.length > 0 && (
-            <label className="text-sm font-semibold">Formulario a completar (opcional):
+          {modo === 'formulario' && (
+            <label className="text-sm font-semibold">Formulario:
               <select
                 className="border rounded px-2 py-1 text-sm w-full mt-1"
                 value={selectedFormId}
                 onChange={(e) => handleSelectFormulario(e.target.value)}
+                required
               >
-                <option value="">Ninguno (solo datos básicos)</option>
+                <option value="">Selecciona un formulario</option>
                 {formularios.map((f) => (
                   <option key={f.id} value={f.id}>{f.name}</option>
                 ))}
@@ -360,7 +443,7 @@ export default function NuevaMantencion() {
             </label>
           )}
 
-          {selectedFormulario && (
+          {modo === 'formulario' && selectedFormulario && (
             <div className="border rounded-lg p-3 bg-blue-50/50 flex flex-col gap-3">
               <p className="text-sm font-bold text-gray-700">{selectedFormulario.name}</p>
               {(selectedFormulario.fields || [])
