@@ -318,3 +318,55 @@ export const maintenanceFormsApi = {
     return response.json();
   },
 };
+
+export const authApi = {
+  /**
+   * Solicitar recuperación de contraseña (envía correo si el email existe)
+   */
+  forgotPassword: async (email) => {
+    const response = await fetch(`${API_URL}/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Error al solicitar la recuperación');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Verificar si un token de recuperación es válido (sin consumirlo)
+   */
+  validateResetToken: async (token) => {
+    const response = await fetch(`${API_URL}/auth/reset-password/validate?token=${encodeURIComponent(token)}`, {
+      credentials: 'include',
+    });
+
+    if (!response.ok) return { valid: false };
+    return response.json();
+  },
+
+  /**
+   * Restablecer contraseña con el token recibido por correo
+   */
+  resetPassword: async (token, newPassword) => {
+    const response = await fetch(`${API_URL}/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ token, newPassword }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Error al restablecer la contraseña');
+    }
+
+    return response.json();
+  },
+};
