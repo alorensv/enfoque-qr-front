@@ -13,6 +13,7 @@ const ACTION_LABELS = {
   FOTOS_AGREGADAS: 'Fotos agregadas',
   DOCUMENTOS_AGREGADOS: 'Documentos agregados',
   FOTO_ELIMINADA: 'Foto eliminada',
+  FORMULARIO_COMPLETADO: 'Formulario completado',
 };
 
 export default function MaintenanceDetail() {
@@ -220,6 +221,23 @@ export default function MaintenanceDetail() {
                 {saving ? 'Guardando...' : 'Guardar cambios'}
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Formulario dinámico completado (respuestas congeladas al momento de responder) */}
+        {maintenance.formAnswers && maintenance.formAnswers.length > 0 && (
+          <div>
+            <h2 className="text-lg font-bold text-gray-800 mb-2">Checklist / Formulario completado</h2>
+            <ul className="border border-gray-100 rounded-lg divide-y divide-gray-100">
+              {maintenance.formAnswers.map((a) => (
+                <li key={a.id} className="px-3 py-2 flex items-center justify-between gap-3 text-sm">
+                  <span className="font-semibold text-gray-700">{a.labelSnapshot}</span>
+                  <span className="text-gray-600">
+                    {a.fieldTypeSnapshot === 'checklist' ? (a.value === 'true' ? 'Sí' : 'No') : (a.value || '-')}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 

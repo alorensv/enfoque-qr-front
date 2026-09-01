@@ -214,6 +214,111 @@ export const institutionApi = {
   },
 };
 
+export const maintenanceFormsApi = {
+  /**
+   * Listar formularios de la institución (admin)
+   */
+  getAll: async () => {
+    const response = await fetch(`${API_URL}/maintenance-forms`, {
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al obtener formularios');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Detalle de un formulario, con sus campos (admin)
+   */
+  getById: async (id) => {
+    const response = await fetch(`${API_URL}/maintenance-forms/${id}`, {
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al obtener el formulario');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Crear un formulario (plantilla + campos)
+   */
+  create: async (data) => {
+    const response = await fetch(`${API_URL}/maintenance-forms`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Error al crear el formulario');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Editar un formulario (plantilla y/o campos)
+   */
+  update: async (id, data) => {
+    const response = await fetch(`${API_URL}/maintenance-forms/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Error al editar el formulario');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Eliminar (soft-delete) un formulario
+   */
+  remove: async (id) => {
+    const response = await fetch(`${API_URL}/maintenance-forms/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Error al eliminar el formulario');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Formularios disponibles para un equipo (público, atado al token QR)
+   */
+  getAvailableByToken: async (token) => {
+    const response = await fetch(`${API_URL}/maintenance-forms/available?token=${encodeURIComponent(token)}`, {
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al obtener los formularios disponibles');
+    }
+
+    return response.json();
+  },
+};
+
 export const authApi = {
   /**
    * Solicitar recuperación de contraseña (envía correo si el email existe)
