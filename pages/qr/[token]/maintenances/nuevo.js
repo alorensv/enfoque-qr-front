@@ -2,6 +2,8 @@ import { useRouter } from 'next/router';
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { maintenanceFormsApi } from '../../../../services/api';
+import QrBrandBanner from '../../../../components/QrBrandBanner';
+import { resolveThemeKeyForInstitution, themeCssVars } from '../../../../lib/theme';
 
 /* ─── Íconos SVG inline (lineales, coherentes con el resto del front) ─── */
 const Icon = {
@@ -25,6 +27,26 @@ const Icon = {
 const inputCls = "w-full rounded-xl border border-[var(--color-border)] px-4 py-3 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary-soft2)] transition placeholder:text-gray-400";
 const labelCls = "text-sm font-bold text-gray-900 flex items-center gap-1 mb-1.5";
 const Required = () => <span className="text-red-500">*</span>;
+
+/**
+ * Tarjeta blanca con el banner de marca del cliente (mismo banner que la
+ * ficha del equipo en qr/[token].js), para que ambas pantallas se vean
+ * como parte del mismo flujo. La marca depende de la institución dueña del
+ * equipo (equipo.institution.slug), no del dominio desde el que se mira la
+ * página — así se ve igual sin importar dónde se escaneó el QR.
+ */
+function BrandCard({ equipo, children }) {
+  const themeKey = resolveThemeKeyForInstitution(equipo?.institution?.slug);
+  const isLortech = themeKey === 'lortech';
+  return (
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center py-8 px-4">
+      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg overflow-hidden" style={themeCssVars(themeKey)}>
+        <QrBrandBanner isLortech={isLortech} />
+        <div className="p-6">{children}</div>
+      </div>
+    </div>
+  );
+}
 
 /** Encabezado + tarjeta del equipo, comunes al selector de modo y al formulario. */
 function Header({ token, equipo, onBack, children }) {
@@ -380,56 +402,53 @@ export default function NuevaMantencion() {
   // Antes de mostrar cualquier campo, se elige cómo registrar la mantención.
   if (!modo) {
     return (
-      <div className="min-h-screen flex flex-col items-center bg-[var(--color-background)] py-6 px-4">
-        <div className="w-full max-w-lg">
-          <Header token={token} equipo={equipo} onBack={() => router.push(`/qr/${token}`)} />
+      <BrandCard equipo={equipo}>
+        <Header token={token} equipo={equipo} onBack={() => router.push(`/qr/${token}`)} />
 
-          <p className="text-sm font-semibold text-gray-700 mb-3">¿Cómo quieres registrar esta mantención?</p>
+        <p className="text-sm font-semibold text-gray-700 mb-3">¿Cómo quieres registrar esta mantención?</p>
 
-          <div className="flex flex-col gap-3">
-            <button
-              type="button"
-              disabled={formularios.length === 0}
-              onClick={() => elegirModo('formulario')}
-              className="text-left flex items-start gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 hover:border-[var(--color-primary)] hover:bg-[var(--color-primary-soft)] transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-[var(--color-border)] disabled:hover:bg-[var(--color-surface)]"
-            >
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-[var(--color-primary-soft)]">
-                <Icon.clipboard className="w-5 h-5 text-[var(--color-primary)]" />
-              </div>
-              <div className="min-w-0">
-                <p className="font-bold text-gray-900">Usar un formulario predefinido</p>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  {formularios.length > 0
-                    ? 'Completa un checklist o formulario configurado por tu institución.'
-                    : 'Tu institución todavía no tiene formularios configurados.'}
-                </p>
-              </div>
-            </button>
+        <div className="flex flex-col gap-3">
+          <button
+            type="button"
+            disabled={formularios.length === 0}
+            onClick={() => elegirModo('formulario')}
+            className="text-left flex items-start gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 hover:border-[var(--color-primary)] hover:bg-[var(--color-primary-soft)] transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-[var(--color-border)] disabled:hover:bg-[var(--color-surface)]"
+          >
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-[var(--color-primary-soft)]">
+              <Icon.clipboard className="w-5 h-5 text-[var(--color-primary)]" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-bold text-gray-900">Usar un formulario predefinido</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {formularios.length > 0
+                  ? 'Completa un checklist o formulario configurado por tu institución.'
+                  : 'Tu institución todavía no tiene formularios configurados.'}
+              </p>
+            </div>
+          </button>
 
-            <button
-              type="button"
-              onClick={() => elegirModo('libre')}
-              className="text-left flex items-start gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 hover:border-[var(--color-primary)] hover:bg-[var(--color-primary-soft)] transition"
-            >
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-[var(--color-primary-soft)]">
-                <Icon.pencil className="w-5 h-5 text-[var(--color-primary)]" />
-              </div>
-              <div className="min-w-0">
-                <p className="font-bold text-gray-900">Registro libre</p>
-                <p className="text-xs text-gray-500 mt-0.5">Descripción libre, fecha, técnico responsable, fotos y documentos.</p>
-              </div>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => elegirModo('libre')}
+            className="text-left flex items-start gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 hover:border-[var(--color-primary)] hover:bg-[var(--color-primary-soft)] transition"
+          >
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-[var(--color-primary-soft)]">
+              <Icon.pencil className="w-5 h-5 text-[var(--color-primary)]" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-bold text-gray-900">Registro libre</p>
+              <p className="text-xs text-gray-500 mt-0.5">Descripción libre, fecha, técnico responsable, fotos y documentos.</p>
+            </div>
+          </button>
         </div>
-      </div>
+      </BrandCard>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center bg-[var(--color-background)] py-6 px-4">
-      <div className="w-full max-w-lg">
-        <Header token={token} equipo={equipo} onBack={() => router.push(`/qr/${token}`)}>
-          <div className="grid grid-cols-2 gap-3 mb-5">
+    <BrandCard equipo={equipo}>
+      <Header token={token} equipo={equipo} onBack={() => router.push(`/qr/${token}`)}>
+        <div className="grid grid-cols-2 gap-3 mb-5">
             <button
               type="button"
               onClick={() => setModo(null)}
@@ -669,7 +688,6 @@ export default function NuevaMantencion() {
             <Icon.lock className="w-3.5 h-3.5" /> Tu información está segura
           </div>
         </form>
-      </div>
-    </div>
+      </BrandCard>
   );
 }
