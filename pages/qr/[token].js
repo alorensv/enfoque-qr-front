@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
 import { useAuth } from '../../contexts/AuthContext';
 import FullScreenLoader from '../../components/FullScreenLoader';
+import QrBrandBanner from '../../components/QrBrandBanner';
+import { resolveThemeKeyForInstitution, themeCssVars } from '../../lib/theme';
 
 export default function QrPage() {
   const { user } = useAuth();
@@ -172,35 +174,25 @@ export default function QrPage() {
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
   if (!qr) return null;
 
+  // La marca (color + logo) depende de la institución DUEÑA DEL EQUIPO, no
+  // del dominio desde el que se mira la página — el QR puede escanearse
+  // desde cualquier lado. Se acota con variables CSS solo a esta tarjeta.
+  const institutionSlug = equipo?.institution?.slug;
+  const themeKey = resolveThemeKeyForInstitution(institutionSlug);
+  const isLortech = themeKey === 'lortech';
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center py-8 px-4">
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg overflow-hidden">
+      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg overflow-hidden" style={themeCssVars(themeKey)}>
 
-        {/* Banner Superior con Logo y Botón Cotizar */}
-        <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 px-4 sm:px-6 py-4 flex items-center justify-between shadow-md">
-          <div className="flex items-center">
-            <img
-              src="/logo_lortech_blanco.png"
-              alt="Lortech"
-              className="h-10 sm:h-12 md:h-14 w-auto object-contain"
-            />
-          </div>
-          <button
-            onClick={() => window.open('https://lortech.cl/contacto/', '_blank')}
-            className="bg-white hover:bg-gray-100 text-blue-900 font-bold px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center gap-2 text-sm sm:text-base whitespace-nowrap"
-          >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <span>Cotizar</span>
-          </button>
-        </div>
+        {/* Banner Superior con marca del cliente (Lortech real, o Enfoque QR por defecto) */}
+        <QrBrandBanner isLortech={isLortech} />
 
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-5">
           {/* Header */}
           <div className="flex items-start justify-between gap-4">
-            <div className="flex-grow">
-              <h1 className="text-2xl font-bold text-gray-800">{equipo?.name || 'Equipo sin nombre'}</h1>
+            <div className="flex-grow min-w-0">
+              <h1 className="text-2xl font-bold text-gray-900">{equipo?.name || 'Equipo sin nombre'}</h1>
               <p className="text-sm text-gray-500">{equipo?.description}</p>
               <span className={`mt-2 inline-block px-3 py-1 text-xs font-semibold rounded-full ${equipo?.status === 'activo' ? 'bg-green-100 text-green-800' :
                   equipo?.status === 'inactivo' ? 'bg-gray-200 text-gray-600' :
@@ -211,15 +203,20 @@ export default function QrPage() {
               <img
                 src={`${process.env.NEXT_PUBLIC_API_URL}/equipments/${equipo.id}/photo`}
                 alt="Foto del equipo"
-                className="w-24 h-24 object-cover rounded-lg border-2 border-gray-200"
+                className="w-24 h-24 object-cover rounded-xl border border-[var(--color-border)] flex-shrink-0"
               />
             )}
           </div>
 
           {/* Última Mantención */}
           {lastMaintenance && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h2 className="text-lg font-bold text-blue-900 mb-2">Última Mantención</h2>
+            <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-primary-soft)] p-4">
+              <div className="flex items-center gap-2.5 mb-3">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/70">
+                  <svg className="w-5 h-5 text-[var(--color-primary)]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></svg>
+                </div>
+                <h2 className="font-bold text-[var(--color-primary-strong)]">Última mantención</h2>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div>
                   <p className="font-semibold text-gray-600">Fecha</p>
@@ -238,14 +235,19 @@ export default function QrPage() {
           )}
 
           {/* Detalles del Equipo */}
-          <div className="border-t pt-6">
-            <h2 className="text-lg font-bold text-gray-800 mb-3">Detalles del Equipo</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center gap-3">
+          <div className="rounded-2xl border border-[var(--color-border)] p-4">
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-[var(--color-primary-soft)]">
+                <svg className="w-5 h-5 text-[var(--color-primary)]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" /></svg>
+              </div>
+              <h2 className="font-bold text-gray-900">Detalles del equipo</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+              <div className="flex items-center gap-2">
                 <span className="text-gray-500">N/S:</span>
                 <span className="font-mono bg-gray-100 px-2 py-1 rounded text-gray-800">{equipo?.serialNumber || '-'}</span>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <span className="text-gray-500">Creado:</span>
                 <span className="text-gray-800">{equipo?.createdAt ? new Date(equipo.createdAt).toLocaleDateString() : '-'}</span>
               </div>
@@ -253,8 +255,13 @@ export default function QrPage() {
           </div>
 
           {/* Documentación */}
-          <div className="border-t pt-6">
-            <h2 className="text-lg font-bold text-gray-800 mb-3">Documentación</h2>
+          <div className="rounded-2xl border border-[var(--color-border)] p-4">
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-[var(--color-primary-soft)]">
+                <svg className="w-5 h-5 text-[var(--color-primary)]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+              </div>
+              <h2 className="font-bold text-gray-900">Documentación</h2>
+            </div>
             <ul className="space-y-2">
               {documentos.filter(doc => canSeePrivate || !doc.isPrivate).length === 0 ? (
                 <li className="text-gray-500 text-sm italic">No hay documentos disponibles.</li>
@@ -262,10 +269,10 @@ export default function QrPage() {
                 documentos
                   .filter(doc => canSeePrivate || !doc.isPrivate)
                   .map(doc => (
-                    <li key={doc.id} className="bg-gray-50 rounded-lg p-3 flex items-center justify-between gap-4 transition hover:bg-gray-100">
+                    <li key={doc.id} className="bg-gray-50 rounded-xl p-3 flex items-center justify-between gap-4 transition hover:bg-gray-100">
                       <div className="flex items-center gap-3 flex-grow min-w-0">
-                        <span className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                        <span className="w-9 h-9 rounded-xl bg-[var(--color-primary-soft)] flex items-center justify-center flex-shrink-0">
+                          <svg className="w-5 h-5 text-[var(--color-primary)]" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
                         </span>
                         <div className="min-w-0">
                           <p className="font-semibold text-gray-900 truncate">
@@ -282,7 +289,7 @@ export default function QrPage() {
                         {doc.filePath && (
                           <a
                             href={`${process.env.NEXT_PUBLIC_API_URL}/equipments/documents/${doc.id}/download`}
-                            className="text-blue-600 hover:underline text-sm font-medium"
+                            className="text-[var(--color-primary)] hover:underline text-sm font-medium"
                           >
                             Descargar
                           </a>
@@ -306,12 +313,17 @@ export default function QrPage() {
           </div>
 
           {/* Mantenciones */}
-          <div className="border-t pt-6">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold text-gray-800">Historial de Mantenciones</h2>
+          <div className="rounded-2xl border border-[var(--color-border)] p-4">
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-[var(--color-primary-soft)]">
+                  <svg className="w-5 h-5 text-[var(--color-primary)]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" /></svg>
+                </div>
+                <h2 className="font-bold text-gray-900">Historial de mantenciones</h2>
+              </div>
               {canSeePrivate && (
                 <button
-                  className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-4 py-2 text-sm shadow-sm transition flex items-center gap-2"
+                  className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-semibold rounded-xl px-4 py-2 text-sm shadow-sm transition flex items-center gap-2 flex-shrink-0"
                   onClick={() => router.push(`/qr/${token}/maintenances/nuevo`)}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
@@ -324,10 +336,10 @@ export default function QrPage() {
                 <li className="text-gray-500 text-sm italic">No hay mantenciones registradas.</li>
               ) : (
                 mantenciones.map(mant => (
-                  <li key={mant.id} className="bg-gray-50 rounded-lg p-3 flex items-center justify-between gap-4 text-sm">
+                  <li key={mant.id} className="bg-gray-50 rounded-xl p-3 flex items-center justify-between gap-4 text-sm">
                     <div className="flex items-center gap-3 flex-grow min-w-0">
-                      <span className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
-                        <svg className="w-5 h-5 text-blue-800" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085" /></svg>
+                      <span className="w-9 h-9 rounded-xl bg-[var(--color-primary-soft)] flex items-center justify-center flex-shrink-0">
+                        <svg className="w-5 h-5 text-[var(--color-primary)]" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085" /></svg>
                       </span>
                       <div className="min-w-0">
                         <p className="font-semibold text-gray-800">
@@ -340,7 +352,7 @@ export default function QrPage() {
                     </div>
                     <div className="flex gap-2 flex-shrink-0">
                       <button
-                        className="text-blue-600 hover:underline font-medium"
+                        className="text-[var(--color-primary)] hover:underline font-medium"
                         onClick={() => router.push(`/qr/${token}/maintenances/detail?id=${mant.id}`)}
                       >
                         Ver Detalles
@@ -363,10 +375,10 @@ export default function QrPage() {
           </div>
 
           {/* Footer y Acciones */}
-          <div className="border-t pt-6 text-center">
+          <div className="border-t border-[var(--color-border)] pt-5 text-center">
             {isLoggedIn ? (
               <button
-                className="w-full max-w-xs mx-auto px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold text-sm transition"
+                className="w-full max-w-xs mx-auto px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 font-semibold text-sm transition"
                 onClick={handleLogout}
               >
                 Cerrar sesión
@@ -375,7 +387,7 @@ export default function QrPage() {
               <p className="text-sm text-gray-500">
                 ¿Eres administrador?{' '}
                 <button
-                  className="text-blue-600 hover:underline font-semibold"
+                  className="text-[var(--color-primary)] hover:underline font-semibold"
                   onClick={() => router.push(`/qr/login?token=${token}`)}
                 >
                   Inicia sesión aquí
