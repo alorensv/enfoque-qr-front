@@ -93,7 +93,7 @@ export function AuthProvider({ children }) {
       fetch(`${API_URL}/auth/refresh`, { method: 'POST', credentials: 'include' }).catch(
         () => undefined,
       );
-    }, 20 * 60 * 1000); // 20 min (access token dura 30 min)
+    }, 4 * 60 * 1000); // 4 min (access token dura 5 min desde AUT-01 — antes decía 20/30min, desactualizado)
     return () => clearInterval(id);
   }, [user]);
 
@@ -115,8 +115,27 @@ export function AuthProvider({ children }) {
     router.push('/');
   };
 
+  // AUT-09: cierra esta sesión y cualquier otra activa (otros
+  // navegadores/dispositivos) — no solo la actual, a diferencia de logout().
+  // Devuelve un boolean para que quien la llame pueda mostrar un error si falla.
+  const logoutAll = async () => {
+    try {
+      const res = await fetch(`${API_URL}/auth/logout-all`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!res.ok) return false;
+    } catch (error) {
+      console.error('Error al cerrar todas las sesiones:', error);
+      return false;
+    }
+    setUser(null);
+    router.push('/');
+    return true;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, logoutAll, loading }}>
       {children}
     </AuthContext.Provider>
   );
