@@ -6,11 +6,25 @@ import { useAuth } from '../../contexts/AuthContext';
 
 export default function EditarPerfil() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, logoutAll } = useAuth();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [closingAll, setClosingAll] = useState(false);
+  const [confirmingCloseAll, setConfirmingCloseAll] = useState(false);
+  const [closeAllError, setCloseAllError] = useState(null);
+
+  const handleLogoutAll = async () => {
+    setClosingAll(true);
+    setCloseAllError(null);
+    const ok = await logoutAll();
+    if (!ok) {
+      setClosingAll(false);
+      setCloseAllError('No se pudo cerrar las sesiones. Intenta de nuevo.');
+    }
+    // Si funcionó, logoutAll() ya redirige a /.
+  };
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -268,6 +282,58 @@ export default function EditarPerfil() {
               </button>
             </div>
           </form>
+        </div>
+
+        {/* Seguridad — AUT-09 */}
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 md:p-8 max-w-3xl mt-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-1">Seguridad</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Si perdiste un dispositivo o sospechas que alguien más accedió a tu cuenta, podés cerrar
+            todas las sesiones activas de una vez — incluida esta.
+          </p>
+
+          {closeAllError && (
+            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {closeAllError}
+            </div>
+          )}
+
+          {!confirmingCloseAll ? (
+            <button
+              type="button"
+              onClick={() => setConfirmingCloseAll(true)}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 transition-all focus:outline-none focus:ring-2 focus:ring-red-300"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Cerrar sesión en todos los dispositivos
+            </button>
+          ) : (
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-sm text-gray-700">
+                Esto te va a desconectar de acá también. ¿Confirmás?
+              </span>
+              <button
+                type="button"
+                onClick={handleLogoutAll}
+                disabled={closingAll}
+                className={`inline-flex items-center gap-2 px-5 py-2 rounded-lg font-semibold text-white shadow transition-all ${
+                  closingAll ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'
+                }`}
+              >
+                {closingAll ? 'Cerrando...' : 'Sí, cerrar todas'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmingCloseAll(false)}
+                disabled={closingAll}
+                className="px-5 py-2 rounded-lg font-semibold text-gray-600 hover:bg-gray-100 transition-all"
+              >
+                Cancelar
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </AdminLayout>
